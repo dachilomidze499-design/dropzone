@@ -2170,6 +2170,7 @@ body[data-theme] .modal.chat-modal {
   align-items: center;
   justify-items: stretch;
   gap: 12px;
+  padding-right: 12px;
   aspect-ratio: auto;
 }
 
@@ -2268,7 +2269,7 @@ body[data-theme] .modal.chat-modal {
   .hero-visual {
     width: 100%;
     margin-inline: 0;
-    grid-template-columns: minmax(0, 1fr) 116px;
+    grid-template-columns: minmax(0, 1fr) 132px;
     grid-template-rows: minmax(250px, auto);
     gap: 12px;
   }

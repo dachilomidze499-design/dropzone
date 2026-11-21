@@ -547,7 +547,7 @@
         const form = document.getElementById('site-config-form');
         if (!form) return;
         form.elements.partnerName.value = config.partnerName || 'უცხო ენების უმაღლესი სკოლა ნინო';
-        form.elements.tickerMessage.value = config.tickerMessage || 'DropZone მხარს უჭერს უცხო ენების უმაღლეს სკოლა ნინოს — ჩვენს მთავარ პარტნიორს.';
+        form.elements.tickerMessage.value = config.tickerMessage || 'DropZone-ს მხარს უჭერს უცხო ენების უმაღლესი სკოლა „ნინო“.';
         form.elements.partnerDescription.value = config.partnerDescription || '';
         form.elements.partnerWebsiteUrl.value = config.partnerWebsiteUrl || '';
       }, reportError);

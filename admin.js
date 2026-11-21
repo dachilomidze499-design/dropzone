@@ -364,7 +364,7 @@ pinForm.addEventListener('submit', async event => {
       connectionLabel.textContent = 'ლოკალური სატესტო რეჟიმი · მონაცემები დროებითია';
     }
   } catch (error) {
-    console.error('Admin PIN verification failed.', error);
+    console.error('Admin PIN verification failed.', error.code || 'admin_api_failed');
     pinMessage.textContent = error.message || 'PIN-ის შემოწმება ვერ მოხერხდა.';
   } finally {
     button.disabled = false;

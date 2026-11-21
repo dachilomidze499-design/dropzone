@@ -1,7 +1,7 @@
 /* DropZone-ის კატალოგი, ფილტრები და სავაჭრო მოქმედებები */
 /* ტექსტების საერთო ლექსიკონი და თითოეული ენის ტექსტური კვანძების რუკა */
 const translations = {
-  ka: { ticker: ['DropZone მხარს უჭერს უცხო ენების უმაღლეს სკოლა ნინოს — ჩვენს მთავარ პარტნიორს.'], currency: '₾' },
+  ka: { ticker: ['DropZone-ს მხარს უჭერს უცხო ენების უმაღლესი სკოლა „ნინო“.'], currency: '₾' },
   en: { ticker: ['DropZone proudly partners with Nino Higher School of Foreign Languages.'], currency: 'GEL' },
   ru: { ticker: ['DropZone поддерживает главного партнера — Высшую школу иностранных языков «Нино».'], currency: '₾' }
 };
@@ -171,7 +171,7 @@ addTranslation('ეს ადგილობრივი გადახდი�
   ['კორექტირება ვერ შესრულდა: შეამოწმე თანხა და ნაშთი.', 'Adjustment failed: check the amount and resulting balance.', 'Не удалось изменить баланс: проверьте сумму и остаток.']
 ].forEach(entry => addTranslation(...entry));
 [
-  ['DropZone მხარს უჭერს უცხო ენების უმაღლეს სკოლა ნინოს — ჩვენს მთავარ პარტნიორს.', 'DropZone proudly partners with Nino Higher School of Foreign Languages.', 'DropZone поддерживает главного партнера — Высшую школу иностранных языков «Нино».'],
+  ['DropZone-ს მხარს უჭერს უცხო ენების უმაღლესი სკოლა „ნინო“.', 'DropZone proudly partners with Nino Higher School of Foreign Languages.', 'DropZone поддерживает главного партнера — Высшую школу иностранных языков «Нино».'],
   ['ხელნაკეთი. უნიკალური. ლოკალური.', 'Handmade. Unique. Local.', 'Ручная работа. Уникально. Локально.'],
   ['შენი იდეა.', 'Your idea.', 'Твоя идея.'],
   ['შენი შემოქმედება.', 'Your creation.', 'Твоё творчество.'],

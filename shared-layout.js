@@ -26,14 +26,14 @@
   }).join('');
   const brandMark = `<img class="brand-mark" src="${href('assets/dropzone-brand-round.png')}" alt="">`;
   const header = `<div class="shared-header">
-    <div class="ticker" aria-label="პარტნიორის სიახლე"><div class="ticker-track" id="ticker-track"><span>DropZone-ის მთავარი პარტნიორია უცხო ენების უმაღლესი სკოლა ნინო</span><span>DropZone-ის მთავარი პარტნიორია უცხო ენების უმაღლესი სკოლა ნინო</span></div></div>
+    <div class="ticker" aria-label="პარტნიორის სიახლე"><div class="ticker-track" id="ticker-track"><span>DropZone-ს მხარს უჭერს უცხო ენების უმაღლესი სკოლა „ნინო“.</span><span>DropZone-ს მხარს უჭერს უცხო ენების უმაღლესი სკოლა „ნინო“.</span></div></div>
     <header class="site-header">
       <a class="brand" href="${href('index.html')}" aria-label="DropZone მთავარი"><span class="brand-icon">${brandMark}</span><span class="brand-name">DropZone</span></a>
       <nav class="main-nav" id="primary-navigation" aria-label="მთავარი ნავიგაცია">${navLinks}</nav>
       <div class="header-actions">
         <button class="icon-action" type="button" aria-label="შეტყობინებები" data-notifications-open data-shared-action="notifications"><svg class="notification-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 9a6 6 0 0 0-12 0c0 7-2 7-2 9h16c0-2-2-2-2-9"/><path d="M10 21h4"/></svg><span class="notification-count" data-notification-count hidden>0</span></button>
         <button class="icon-action" id="favorites-toggle" type="button" aria-label="ფავორიტები" data-shared-action="favorites"><svg class="header-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 8.6c0 5-8.8 10.1-8.8 10.1S3.2 13.6 3.2 8.6a4.6 4.6 0 0 1 8.8-2.8 4.6 4.6 0 0 1 8.8 2.8Z"/></svg><span id="favorite-count">0</span></button>
-        <button class="icon-action" id="cart-open" type="button" aria-label="კალათა" data-shared-action="cart"><svg class="cart-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 8.5h11l-1 12h-9l-1-12Z"/><path d="M9 8.5a3 3 0 0 1 6 0"/></svg><span id="cart-count">0</span></button>
+        <button class="icon-action" id="cart-open" type="button" aria-label="კალათა" data-shared-action="cart"><svg class="cart-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 4.5h2l2.2 10.1a2 2 0 0 0 2 1.6h8.5a2 2 0 0 0 2-1.6L22 8H6"/><circle cx="10.5" cy="20" r="1.2"/><circle cx="18" cy="20" r="1.2"/></svg><span id="cart-count">0</span></button>
         <div class="language-picker" role="group" aria-label="ენის არჩევა"><button type="button" data-language="ka">GEO</button><button type="button" data-language="en">ENG</button><button type="button" data-language="ru">RUS</button></div>
         <button class="account-button" id="auth-open" type="button" aria-label="შესვლა / რეგისტრაცია" data-shared-action="login"><span class="account-label" data-i18n="შესვლა / რეგისტრაცია">შესვლა / რეგისტრაცია</span><svg class="account-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5.5 19c.8-3.7 3-5.5 6.5-5.5s5.7 1.8 6.5 5.5"/></svg></button>
         <button class="balance-button" data-open-balance type="button" aria-label="ბალანსი" data-shared-action="balance"><span class="balance-dot"></span><span id="balance-label">ბალანსი: 0 ₾</span><span class="balance-plus" aria-hidden="true"><svg class="header-icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span></button>

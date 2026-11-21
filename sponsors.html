@@ -11,6 +11,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Georgian:wght@400;500;600;700;800&family=Oswald:wght@500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="admin.css">
   <link rel="stylesheet" href="shared-layout.css">
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-auth-compat.js"></script>
@@ -25,22 +26,22 @@
 <body data-theme="light">
   <div id="shared-header"></div>
   <main class="sponsors-page shell">
-    <div class="page-kicker"><span>DROPZONE / PARTNERS</span><span>ადგილობრივი ნიჭის მხარდაჭერა</span></div>
+    <div class="page-kicker"><span>DROPZONE / PARTNERS</span><span data-sponsors-copy="pageKicker">ადგილობრივი ნიჭის მხარდაჭერა</span></div>
     <section class="sponsors-intro">
-      <p class="eyebrow">ერთად ვუჭერთ მხარს შემოქმედებას</p>
-      <h1>ჩვენი <span>პარტნიორები.</span></h1>
-      <p>პარტნიორები გვეხმარებიან ადგილობრივი ხელოვანებისა და მცირე ბიზნესის განვითარებაში.</p>
+      <p class="eyebrow" data-sponsors-copy="introEyebrow">ერთად ვუჭერთ მხარს შემოქმედებას</p>
+      <h1><span data-sponsors-copy="titlePrefix">ჩვენი</span> <span class="sponsors-title-highlight" data-sponsors-copy="titleSuffix">პარტნიორები.</span></h1>
+      <p data-sponsors-copy="introDescription">პარტნიორები გვეხმარებიან ადგილობრივი ხელოვანებისა და მცირე ბიზნესის განვითარებაში.</p>
     </section>
     <section class="featured-partner" id="featured-partner" aria-labelledby="featured-partner-title">
-      <p class="eyebrow">მთავარი პარტნიორი</p>
+      <p class="eyebrow" data-sponsors-copy="featuredEyebrow">მთავარი პარტნიორი</p>
       <div class="featured-partner-content" id="featured-partner-content">
         <img class="featured-partner-logo" src="assets/nino-school-logo.png" alt="უცხო ენების უმაღლესი სკოლა ნინო — ლოგო">
         <div><h2 id="featured-partner-title">უცხო ენების უმაღლესი სკოლა ნინო</h2><p>მადლობა მხარდაჭერისა და პარტნიორობისთვის.</p></div>
       </div>
     </section>
     <section class="sponsor-directory" aria-labelledby="sponsor-directory-title">
-      <div class="section-heading"><div><p class="eyebrow">DROPZONE / COMMUNITY</p><h2 id="sponsor-directory-title">სპონსორები</h2></div></div>
-      <div class="sponsor-grid" id="sponsor-grid" aria-live="polite"><p class="demo-note">სპონსორები იტვირთება…</p></div>
+      <div class="section-heading"><div><p class="eyebrow">DROPZONE / COMMUNITY</p><h2 id="sponsor-directory-title" data-sponsors-copy="directoryTitle">სპონსორები</h2></div></div>
+      <div class="sponsor-grid" id="sponsor-grid" aria-live="polite"><p class="demo-note" data-sponsors-copy="loading">სპონსორები იტვირთება…</p></div>
     </section>
   </main>
   <div id="shared-footer"></div>

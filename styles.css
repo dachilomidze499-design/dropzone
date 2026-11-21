@@ -152,7 +152,7 @@ body[data-theme="light"] .button-primary { background: #D9541E; color: #111111; 
 body[data-theme="light"] .sponsors-page { padding-top: 42px; padding-bottom: 86px; }
 .sponsors-intro { max-width: 760px; padding: 48px 0 36px; }
 .sponsors-intro h1 { margin: 0; font: 700 clamp(42px,7vw,78px)/1.08 var(--display); overflow-wrap: anywhere; }
-.sponsors-intro h1 span { color: var(--orange); }
+.sponsors-intro h1 .sponsors-title-highlight { color: var(--orange); }
 .sponsors-intro > p:last-child { max-width: 540px; color: var(--muted); line-height: 1.9; }
 .featured-partner { padding: clamp(22px,5vw,52px); border: 1px solid var(--line); background: linear-gradient(125deg,rgba(255,255,255,.85),rgba(217,84,30,.08)); box-shadow: 0 22px 65px rgba(17,17,17,.08); }
 .featured-partner > .eyebrow { margin-bottom: 24px; }

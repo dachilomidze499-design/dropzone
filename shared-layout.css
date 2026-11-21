@@ -13,11 +13,15 @@
 .shared-header .main-nav a.active:after { content: ""; display: block; width: 15px; height: 2px; margin-top: 4px; background: #D9541E; }
 .shared-header .header-actions { display: flex; flex: 0 0 auto; align-items: center; gap: 10px; color: #111111; }
 .shared-header .icon-action,.shared-header .account-button,.shared-header .balance-button { color: #111111; }
-.shared-header .icon-action { position: relative; display: inline-flex; align-items: center; gap: 5px; padding: 7px 2px; background: transparent; border: 0; cursor: pointer; }
+.shared-header .icon-action { position: relative; display: inline-flex; align-items: center; gap: 5px; padding: 7px 2px; background: transparent; border: 0; cursor: pointer; line-height: 1; }
 .shared-header .icon-action span { color: #111111; font-size: 9px; }
 .shared-header .header-icon,.shared-header .cart-icon,.shared-header .account-icon,.shared-header .notification-icon { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.shared-header .site-header:not(.admin-header) .header-actions .icon-action { display: inline-flex; width: 36px; height: 36px; min-width: 36px; flex: 0 0 36px; align-items: center; justify-content: center; gap: 0; padding: 0; border: 1px solid rgba(17,17,17,.2); border-radius: 50%; background: rgba(255,255,255,.32); }
+.shared-header .site-header:not(.admin-header) .header-actions .icon-action > svg { width: 20px; height: 20px; flex: 0 0 20px; flex-shrink: 0; }
+.shared-header .site-header:not(.admin-header) .header-actions .icon-action > span:not(.notification-count) { line-height: 1; }
 .shared-header .notification-count { position: absolute; top: 0; right: -5px; min-width: 14px; height: 14px; padding: 0 3px; border-radius: 999px; background: #D9541E; color: #111111 !important; font-size: 8px !important; line-height: 14px; text-align: center; }
 .shared-header .account-button { display: inline-flex; align-items: center; gap: 7px; padding: 9px 10px; border: 1px solid rgba(17,17,17,.2); background: transparent; font-size: 9px; cursor: pointer; }
+.shared-header .account-button > svg,.shared-header .balance-plus svg { width: 20px; height: 20px; }
 .shared-header .balance-button { display: inline-flex; align-items: center; gap: 7px; padding: 9px 10px; border: 1px solid rgba(17,17,17,.2); background: rgba(255,255,255,.32); font-size: 9px; cursor: pointer; }
 .shared-header .balance-plus { color: #D9541E; }
 .shared-header .balance-dot { width: 6px; height: 6px; border-radius: 50%; background: #D9541E; }
@@ -26,8 +30,8 @@
 .shared-header .language-picker button.is-active { color: #D9541E; font-weight: 700; }
 .shared-header .admin-logout-button { padding: 8px 10px; border: 1px solid rgba(17,17,17,.2); background: #111111; color: #F3EEE3; cursor: pointer; font-size: 9px; }
 .shared-header .admin-logout-button[hidden] { display: none !important; }
-.shared-header .menu-toggle { display: none; width: 36px; height: 36px; padding: 7px; color: #111111; background: transparent; border: 1px solid rgba(17,17,17,.18); cursor: pointer; }
-.shared-header .menu-toggle svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
+.shared-header .menu-toggle { display: none; width: 36px; height: 36px; padding: 7px; color: #111111; background: rgba(255,255,255,.32); border: 1px solid rgba(17,17,17,.2); border-radius: 50%; cursor: pointer; }
+.shared-header .menu-toggle svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; }
 .site-footer { margin-top: 34px; background: #F3EEE3 !important; color: #111111 !important; }
 .site-footer .footer-divider { height: 1px; background: rgba(17,17,17,.16); }
 .site-footer .footer-main { min-height: 220px; display: grid; grid-template-columns: 1.35fr 1fr 1fr 1fr; align-items: start; gap: 30px; padding-block: 34px; border-bottom: 1px solid rgba(17,17,17,.14); }
@@ -106,17 +110,31 @@ html.page-is-leaving body { opacity: 0; transform: translateY(-12px); }
   .shared-header .site-header .brand-icon { width: 32px; height: 32px; flex-basis: 32px; }
   .shared-header .site-header .brand-name { font-size: 13px; }
   .shared-header .header-actions { gap: 5px; }
-  .shared-header .icon-action { gap: 1px; padding-inline: 0; }
+  .shared-header .site-header:not(.admin-header) .header-actions .icon-action { width: 34px; height: 34px; min-width: 34px; flex-basis: 34px; }
   .shared-header .icon-action span { display: none; }
-  .shared-header .account-button { width: 34px; height: 34px; justify-content: center; padding: 0; }
+  .shared-header .account-button { width: 34px !important; height: 34px !important; min-width: 34px !important; max-width: 34px !important; justify-content: center; padding: 0; border-radius: 50%; background: rgba(255,255,255,.32); }
   .shared-header .account-label { display: none; }
-  .shared-header .balance-button { width: 34px; height: 34px; justify-content: center; padding: 0; }
+  .shared-header .balance-button { width: 34px !important; height: 34px !important; min-width: 34px !important; max-width: 34px !important; justify-content: center; padding: 0; border-radius: 50%; background: rgba(255,255,255,.32); }
   .shared-header .balance-dot,.shared-header #balance-label { display: none; }
+  .shared-header .menu-toggle { width: 34px; height: 34px; padding: 5px; }
   .shared-header .admin-logout-button { position: absolute; top: 70px; right: 52px; z-index: 2; }
   .site-footer { margin-top: 27px; }
   .site-footer .footer-main { grid-template-columns: 1fr 1fr; gap: 24px 16px; padding-block: 27px; }
   .site-footer .footer-bottom { min-height: 48px; gap: 8px; font-size: 8px; }
   .site-footer .footer-bottom span:nth-child(2) { max-width: 45%; text-align: right; }
+}
+@media(max-width:390px) {
+  .shared-header .site-header { padding-inline: 8px; gap: 4px; }
+  .shared-header .site-header .brand { gap: 4px; }
+  .shared-header .site-header .brand-icon { width: 28px; height: 28px; flex-basis: 28px; }
+  .shared-header .site-header .brand-name { font-size: 12px; }
+  .shared-header .header-actions { gap: 3px; }
+  .shared-header .menu-toggle { padding: 4px; }
+  .shared-header .site-header:not(.admin-header) .header-actions .icon-action,
+  .shared-header .account-button,
+  .shared-header .balance-button,
+  .shared-header .menu-toggle { width: 30px; height: 30px; min-width: 30px; flex-basis: 30px; }
+  .shared-header .account-button,.shared-header .balance-button { width: 30px !important; height: 30px !important; min-width: 30px !important; max-width: 30px !important; }
 }
 @media(max-width:650px) {
   #admin-pin-card .admin-pin-form { grid-template-columns: minmax(0, 1fr); }

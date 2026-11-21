@@ -98,6 +98,36 @@ test('PIN attempts are throttled after five failures', async () => {
   assert.equal(blocked.statusCode, 429);
 });
 
+test('invalid PIN receives an explicit authentication error', async () => {
+  const response = await dispatch('POST', { action: 'login', pin: 'wrong-pin' });
+  assert.equal(response.statusCode, 401);
+  assert.equal(response.body.error, 'invalid_pin');
+  assert.match(response.body.message, /PIN არასწორია/);
+});
+
+test('missing or invalid PIN session configuration is reported without exposing values', async () => {
+  delete process.env.ADMIN_PIN;
+  const missingPin = await dispatch('GET');
+  assert.equal(missingPin.statusCode, 503);
+  assert.equal(missingPin.body.error, 'admin_pin_not_configured');
+  assert.match(missingPin.body.message, /ADMIN_PIN/);
+
+  process.env.ADMIN_PIN = testPin;
+  process.env.ADMIN_SESSION_SECRET = 'short-secret';
+  const shortSecret = await dispatch('GET');
+  assert.equal(shortSecret.statusCode, 503);
+  assert.equal(shortSecret.body.error, 'admin_session_secret_invalid');
+  assert.match(shortSecret.body.message, /ADMIN_SESSION_SECRET/);
+  assert.doesNotMatch(shortSecret.body.message, /short-secret/);
+});
+
+test('production PIN throttling reports missing Firebase configuration', async () => {
+  delete process.env.DROPZONE_ADMIN_MODE;
+  const correctlyEntered = await dispatch('POST', { action: 'login', pin: testPin });
+  assert.equal(correctlyEntered.statusCode, 503);
+  assert.equal(correctlyEntered.body.error, 'firebase_admin_not_configured');
+});
+
 test('admin mutations reject untrusted origins', async () => {
   const response = await dispatch('POST', { action: 'login', pin: testPin }, {
     origin: 'https://attacker.example'

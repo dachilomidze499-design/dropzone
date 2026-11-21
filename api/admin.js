@@ -34,9 +34,13 @@ function isLocalTestMode() {
 function getPinConfig() {
   const pin = process.env.ADMIN_PIN;
   const sessionSecret = process.env.ADMIN_SESSION_SECRET;
-  if (!pin || pin.length > 128 || !sessionSecret || sessionSecret.length < 32) {
+  if (!pin || !pin.trim() || pin.length > 128) {
     throw new AdminApiError(503, 'admin_pin_not_configured',
-      'ADMIN_PIN და მინიმუმ 32 სიმბოლოსგან შემდგარი ADMIN_SESSION_SECRET გარემოს ცვლადებია საჭირო.');
+      'ADMIN_PIN გარემოს ცვლადი აკლია ან არასწორია (მაქსიმუმ 128 სიმბოლო).');
+  }
+  if (!sessionSecret || !sessionSecret.trim() || Array.from(sessionSecret).length < 32) {
+    throw new AdminApiError(503, 'admin_session_secret_invalid',
+      'ADMIN_SESSION_SECRET გარემოს ცვლადი აკლია ან არასწორია (მინიმუმ 32 სიმბოლო).');
   }
   return { pin, sessionSecret };
 }
@@ -199,7 +203,7 @@ function getTestStore() {
       settings: { commissionRate: 12 },
       siteConfig: {
         partnerName: 'უცხო ენების უმაღლესი სკოლა ნინო',
-        tickerMessage: 'DropZone მხარს უჭერს უცხო ენების უმაღლეს სკოლა ნინოს — ჩვენს მთავარ პარტნიორს.'
+        tickerMessage: 'DropZone-ს მხარს უჭერს უცხო ენების უმაღლესი სკოლა „ნინო“.'
       }
     };
     ADMIN_COLLECTIONS.forEach(name => {
@@ -731,7 +735,6 @@ module.exports = async function adminApi(req, res) {
     const body = parseBody(req.body);
     const { pin, sessionSecret } = getPinConfig();
     if (body.action === 'login') {
-      if (!testMode) getFirebaseServices();
       if (await pinAttemptsBlocked(req, sessionSecret, testMode)) {
         throw apiError(429, 'pin_rate_limited', 'PIN-ის მცდელობების ლიმიტი ამოიწურა. სცადე 15 წუთის შემდეგ.');
       }
@@ -741,6 +744,7 @@ module.exports = async function adminApi(req, res) {
         if (blocked) throw apiError(429, 'pin_rate_limited', 'PIN-ის მცდელობების ლიმიტი ამოიწურა. სცადე 15 წუთის შემდეგ.');
         throw apiError(401, 'invalid_pin', 'PIN არასწორია.');
       }
+      if (!testMode) getFirebaseServices();
       await clearPinAttempts(req, sessionSecret, testMode);
       const expiresAt = Date.now() + SESSION_DURATION_MS;
       const payload = `${expiresAt}.${randomUUID()}`;
@@ -758,7 +762,13 @@ module.exports = async function adminApi(req, res) {
     const status = error instanceof AdminApiError ? error.status : 500;
     const code = error instanceof AdminApiError ? error.code : 'admin_api_failed';
     const message = error instanceof AdminApiError ? error.message : 'ადმინისტრაციული მოთხოვნა ვერ შესრულდა.';
-    if (status >= 500) console.error('Admin API failed.', error);
+    if (status >= 500) {
+      console.error('Admin API failed.', {
+        status,
+        code,
+        name: error instanceof Error ? error.name : 'UnknownError'
+      });
+    }
     return res.status(status).json({ ok: false, error: code, message });
   }
 };

@@ -29,7 +29,12 @@
       options.headers['Content-Type'] = 'application/json';
       options.body = JSON.stringify(body);
     }
-    const response = await fetch(endpoint, options);
+    let response;
+    try {
+      response = await fetch(endpoint, options);
+    } catch {
+      throw new Error('ადმინისტრაციულ სერვერთან კავშირი ვერ დამყარდა. შეამოწმე სერვერი და სცადე თავიდან.');
+    }
     const data = response.headers.get('content-type')?.includes('application/json')
       ? await response.json() : {};
     if (!response.ok) {
