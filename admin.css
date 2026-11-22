@@ -2322,23 +2322,32 @@ body[data-theme] .modal.chat-modal {
 
 @media (max-width: 350px) {
   .hero-visual {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto auto;
+    grid-template-columns: minmax(0, 1fr) minmax(108px, 132px);
+    grid-template-rows: minmax(200px, auto);
+    gap: 8px;
   }
 
   .hero-photo {
     grid-column: 1;
     grid-row: 1;
-    width: min(100%, 320px);
-    justify-self: center;
+    width: 100%;
+    justify-self: stretch;
   }
 
   .hero-visual .floating-tag {
-    grid-column: 1;
-    grid-row: 2;
-    width: max-content;
-    justify-self: end;
+    top: auto;
+    grid-column: 2;
+    grid-row: 1;
+    width: 100%;
+    justify-self: stretch;
+    padding: 8px;
+    gap: 6px;
+    font-size: 7px;
   }
+}
+
+@media (max-width: 520px) {
+  .hero-visual .floating-tag { top: auto; }
 }
 
 @media (max-width: 390px) {

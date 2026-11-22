@@ -666,12 +666,96 @@ function categoryForProduct(product) {
   if (product.localBrand || product.sellerType === 'business') return 'ლოკალური ბრენდები';
   return 'სხვა…';
 }
+let categoryIndicatorRoot = null;
+let categoryIndicatorResizeObserver = null;
+let categoryIndicatorMutationObserver = null;
+let categoryIndicatorObservedButtons = new Set();
+let categoryIndicatorFrame = null;
+
+function updateCategoryIndicator(root) {
+  if (!root?.isConnected) return;
+  const indicator = root.querySelector('.category-indicator');
+  const selected = root.querySelector('.category-chip.selected');
+  if (!indicator || !selected || root.clientWidth <= 0) {
+    if (indicator) {
+      indicator.style.width = '0px';
+      indicator.style.opacity = '0';
+    }
+    return;
+  }
+  const containerRect = root.getBoundingClientRect();
+  const selectedRect = selected.getBoundingClientRect();
+  if (containerRect.width <= 0 || selectedRect.width <= 0) {
+    indicator.style.opacity = '0';
+    return;
+  }
+  const left = selectedRect.left - containerRect.left - root.clientLeft + root.scrollLeft;
+  indicator.style.width = `${selectedRect.width}px`;
+  indicator.style.transform = `translate3d(${left}px, 0, 0)`;
+  indicator.style.opacity = '1';
+}
+
+function scheduleCategoryIndicatorUpdate(root = categoryIndicatorRoot) {
+  if (!root?.isConnected) return;
+  if (categoryIndicatorFrame !== null) cancelAnimationFrame(categoryIndicatorFrame);
+  categoryIndicatorFrame = requestAnimationFrame(() => {
+    categoryIndicatorFrame = null;
+    updateCategoryIndicator(root);
+  });
+}
+
+function observeCategoryIndicatorButtons(root) {
+  if (!categoryIndicatorResizeObserver) return;
+  const buttons = new Set(root.querySelectorAll('.category-chip'));
+  categoryIndicatorObservedButtons.forEach(button => {
+    if (!buttons.has(button)) categoryIndicatorResizeObserver.unobserve(button);
+  });
+  buttons.forEach(button => {
+    if (!categoryIndicatorObservedButtons.has(button)) categoryIndicatorResizeObserver.observe(button);
+  });
+  categoryIndicatorObservedButtons = buttons;
+}
+
+function bindCategoryIndicator(root) {
+  if (!root) return;
+  if (categoryIndicatorRoot !== root) {
+    categoryIndicatorResizeObserver?.disconnect();
+    categoryIndicatorMutationObserver?.disconnect();
+    categoryIndicatorRoot = root;
+    categoryIndicatorObservedButtons = new Set();
+    categoryIndicatorResizeObserver = typeof ResizeObserver === 'function'
+      ? new ResizeObserver(() => scheduleCategoryIndicatorUpdate(root))
+      : null;
+    categoryIndicatorMutationObserver = typeof MutationObserver === 'function'
+      ? new MutationObserver(() => {
+        observeCategoryIndicatorButtons(root);
+        scheduleCategoryIndicatorUpdate(root);
+      })
+      : null;
+    categoryIndicatorResizeObserver?.observe(root);
+    categoryIndicatorMutationObserver?.observe(root, {
+      childList: true,
+      subtree: true,
+      attributes: true,
+      attributeFilter: ['class']
+    });
+    root.addEventListener('scroll', () => scheduleCategoryIndicatorUpdate(root), { passive: true });
+    window.addEventListener('resize', () => scheduleCategoryIndicatorUpdate(root), { passive: true });
+    document.fonts?.addEventListener('loadingdone', () => scheduleCategoryIndicatorUpdate(root));
+    document.fonts?.ready.then(() => scheduleCategoryIndicatorUpdate(root));
+  }
+  observeCategoryIndicatorButtons(root);
+  scheduleCategoryIndicatorUpdate(root);
+}
+
 function renderCategoryControls() {
   const categories = [...new Set([...defaultCatalogCategories, ...managedCatalogCategories])];
   const root = document.getElementById('brands');
   if (root) {
-    root.innerHTML = `<button class="category-chip ${state.category === 'ყველა' ? 'selected' : ''}" data-category="ყველა" type="button">ყველა <span id="all-count">${allProducts.length}</span></button>`
-      + categories.map(category => `<button class="category-chip ${state.category === category ? 'selected' : ''}" data-category="${escapeHTML(category)}" type="button">${escapeHTML(tr(category))}</button>`).join('');
+    root.innerHTML = `<button class="category-chip ${state.category === 'ყველა' ? 'selected' : ''}" aria-pressed="${state.category === 'ყველა'}" data-category="ყველა" type="button">ყველა <span id="all-count">${allProducts.length}</span></button>`
+      + categories.map(category => `<button class="category-chip ${state.category === category ? 'selected' : ''}" aria-pressed="${state.category === category}" data-category="${escapeHTML(category)}" type="button">${escapeHTML(tr(category))}</button>`).join('')
+      + '<span class="category-indicator" aria-hidden="true"></span>';
+    bindCategoryIndicator(root);
   }
   const select = document.getElementById('listing-category');
   if (select) {
@@ -876,7 +960,12 @@ function renderProducts() {
   }
   const activeStatus = document.getElementById('active-status');
   if (activeStatus) activeStatus.textContent = allProducts.length ? tr('აქტიური განცხადებები') : tr('განცხადებები არ არის');
-  document.querySelectorAll('.category-chip').forEach(button => button.classList.toggle('selected', button.dataset.category === state.category));
+  document.querySelectorAll('.category-chip').forEach(button => {
+    const selected = button.dataset.category === state.category;
+    button.classList.toggle('selected', selected);
+    button.setAttribute('aria-pressed', String(selected));
+  });
+  scheduleCategoryIndicatorUpdate(document.getElementById('brands'));
   attachTilt();
   localizeTree(grid);
   renderTrending();

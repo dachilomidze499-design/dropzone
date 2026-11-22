@@ -232,3 +232,18 @@ body { font-variant-emoji: text; }
   .legal-footer { justify-content: center; }
   .market-ad { grid-template-columns: 90px 1fr; }
 }
+.category-row { position: relative; }
+.category-indicator {
+  position: absolute;
+  left: 0;
+  bottom: 5px;
+  z-index: 1;
+  height: 2px;
+  border-radius: 999px;
+  background: var(--orange);
+  opacity: 0;
+  pointer-events: none;
+  transform: translate3d(0, 0, 0);
+  transition: width .22s ease, transform .22s ease, opacity .12s ease;
+  will-change: width, transform;
+}
