@@ -22,9 +22,9 @@
     <div class="page-kicker"><span>DROPZONE / MANAGEMENT</span><span id="admin-connection">მონაცემების ჩატვირთვა…</span></div>
     <section class="admin-dashboard-heading">
       <div><p class="eyebrow">ადმინისტრირება</p><h1>ადმინისტრატორის <span>პანელი</span></h1></div>
-      <p class="demo-note">ადმინის წვდომა მხოლოდ სერვერზე შემოწმებული PIN-ით ხდება. ლოკალური სატესტო მონაცემებისთვის გაუშვი <code>npm run dev</code>; Firebase service account-ის გასაღებები ბრაუზერში არ იტვირთება.</p>
+      <p class="demo-note">ლოკალურ სატესტო რეჟიმში პანელი PIN-ის გარეშე მუშაობს. production-ზე საჭიროა სერვერზე შემოწმებული PIN. სატესტო მონაცემებისთვის გაუშვი <code>npm run dev</code>.</p>
     </section>
-    <section id="admin-pin-card" class="admin-dashboard-card">
+    <section id="admin-pin-card" class="admin-dashboard-card" hidden>
       <div class="admin-dashboard-card-heading"><div><p class="eyebrow">ADMIN / PIN</p><h2>ადმინისტრატორის PIN</h2></div></div>
       <form id="admin-pin-form" class="admin-settings-form admin-pin-form">
         <label class="field-label" for="admin-pin-input">PIN კოდი
@@ -34,7 +34,7 @@
       </form>
       <p id="admin-pin-message" class="form-message" role="status" aria-live="polite" aria-atomic="true">შესასვლელად შეიყვანე ადმინისტრატორის PIN.</p>
     </section>
-    <div id="admin-dashboard-content" hidden>
+    <div id="admin-dashboard-content" data-authenticated="false">
       <nav class="admin-tabs" role="tablist" aria-label="ადმინისტრატორის სექციები">
         <button class="admin-tab is-active" id="tab-pending" type="button" role="tab" aria-selected="true" aria-controls="panel-pending" data-admin-tab="panel-pending">მოლოდინში მყოფი პროდუქტები <span id="pending-count">0</span></button>
         <button class="admin-tab" id="tab-payments" type="button" role="tab" aria-selected="false" aria-controls="panel-payments" data-admin-tab="panel-payments">გადახდები / ბალანსი</button>

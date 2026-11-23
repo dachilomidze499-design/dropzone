@@ -60,7 +60,7 @@ function lockAdminPinSession() {
 }
 
 document.addEventListener('visibilitychange', () => {
-  if (document.visibilityState === 'visible' && adminPinVerified && Date.now() >= adminPinExpiresAt) {
+  if (document.visibilityState === 'visible' && adminPinVerified && adminPinExpiresAt > 0 && Date.now() >= adminPinExpiresAt) {
     lockAdminPinSession();
   }
 });
@@ -205,7 +205,7 @@ function renderUsers() {
 function showAuthenticatedDashboard() {
   if (!adminPinVerified) return;
   dashboardContent.hidden = false;
-  logoutButton.hidden = false;
+  logoutButton.hidden = window.DropZoneAdminMode === 'test';
   connectionLabel.textContent = window.DropZoneAdminMode === 'test'
     ? 'ლოკალური სატესტო რეჟიმი · მონაცემები დროებითია'
     : 'ადმინისტრატორი ავტორიზებულია · სერვერული PIN';
@@ -411,8 +411,10 @@ function startAdminDashboard() {
   remoteUsers = [];
   dashboardContent.hidden = false;
   dashboardContent.dataset.authenticated = 'true';
-  logoutButton.hidden = false;
-  connectionLabel.textContent = 'PIN სესია აქტიურია · მონაცემები იტვირთება…';
+  logoutButton.hidden = window.DropZoneAdminMode === 'test';
+  connectionLabel.textContent = window.DropZoneAdminMode === 'test'
+    ? 'ლოკალური სატესტო მონაცემები იტვირთება…'
+    : 'PIN სესია აქტიურია · მონაცემები იტვირთება…';
   document.dispatchEvent(new Event('dropzone-admin-ready'));
 
   adminProductsUnsubscribe = adminApi.subscribeAdminProducts(items => {
@@ -449,24 +451,29 @@ async function restoreAdminPinSession() {
   }
   try {
     const result = await adminApi.getSession();
-    if (!result.authenticated) {
-      pinMessage.textContent = 'შესასვლელად შეიყვანე PIN.';
+    window.DropZoneAdminMode = result.mode || 'production';
+    if (result.mode === 'test') {
+      adminPinVerified = true;
+      adminPinExpiresAt = 0;
+      pinCard.hidden = true;
+      dashboardContent.hidden = false;
+      startAdminDashboard();
       return;
     }
-    window.DropZoneAdminMode = result.mode || 'production';
+    if (!result.authenticated) {
+      pinMessage.textContent = 'შესასვლელად შეიყვანე PIN.';
+      pinCard.hidden = false;
+      return;
+    }
     pinCard.hidden = true;
     acceptAdminPinSession(result.expiresAt);
-    if (result.mode === 'test') {
-      connectionLabel.textContent = 'ლოკალური სატესტო რეჟიმი · მონაცემები დროებითია';
-    }
   } catch (error) {
     console.error('Unable to restore admin PIN session.', error);
     connectionLabel.textContent = error.message || 'PIN სესიის შემოწმება ვერ მოხერხდა.';
-    pinMessage.textContent = error.message || 'PIN სესიის შემოწმება ვერ მოხერხდა.';
+    pinCard.hidden = true;
   }
 }
 
-pinCard.hidden = false;
-dashboardContent.hidden = true;
+pinCard.hidden = true;
 logoutButton.hidden = true;
 restoreAdminPinSession();

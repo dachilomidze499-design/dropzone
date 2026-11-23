@@ -1,4 +1,4 @@
-const { createHash, createHmac, randomUUID, timingSafeEqual } = require('node:crypto');
+const { createHash, createHmac, createPrivateKey, randomUUID, timingSafeEqual } = require('node:crypto');
 const { cert, getApps, initializeApp } = require('firebase-admin/app');
 const { FieldValue, getFirestore, Timestamp } = require('firebase-admin/firestore');
 const { getStorage } = require('firebase-admin/storage');
@@ -46,18 +46,31 @@ function getPinConfig() {
 }
 
 function getFirebaseServices() {
-  const projectId = process.env.FIREBASE_PROJECT_ID;
-  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-  const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
+  const projectId = process.env.FIREBASE_PROJECT_ID?.trim();
+  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL?.trim();
+  const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n').trim();
   if (!projectId || !clientEmail || !privateKey) {
     throw new AdminApiError(503, 'firebase_admin_not_configured',
       'ადმინისტრაციული მონაცემებისთვის Vercel-ში დააყენე FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL და FIREBASE_PRIVATE_KEY.');
   }
-  const options = {
-    credential: cert({ projectId, clientEmail, privateKey })
-  };
-  if (process.env.FIREBASE_STORAGE_BUCKET) options.storageBucket = process.env.FIREBASE_STORAGE_BUCKET;
-  const app = getApps()[0] || initializeApp(options);
+  try {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(clientEmail)) throw new Error();
+    createPrivateKey({ key: privateKey, format: 'pem' });
+  } catch {
+    throw new AdminApiError(503, 'firebase_admin_configuration_invalid',
+      'Firebase Admin-ის კონფიგურაცია არასწორია. შეამოწმე FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL და FIREBASE_PRIVATE_KEY.');
+  }
+  let app = getApps().find(existingApp => existingApp.name === '[DEFAULT]');
+  if (!app) {
+    try {
+      const options = { credential: cert({ projectId, clientEmail, privateKey }) };
+      if (process.env.FIREBASE_STORAGE_BUCKET) options.storageBucket = process.env.FIREBASE_STORAGE_BUCKET;
+      app = initializeApp(options);
+    } catch {
+      throw new AdminApiError(503, 'firebase_admin_configuration_invalid',
+        'Firebase Admin-ის კონფიგურაცია ვერ ჩაიტვირთა. შეამოწმე Firebase Service Account-ის მნიშვნელობები.');
+    }
+  }
   return {
     db: getFirestore(app),
     bucket: process.env.FIREBASE_STORAGE_BUCKET
@@ -716,14 +729,17 @@ module.exports = async function adminApi(req, res) {
 
   try {
     if (req.method === 'GET') {
+      if (testMode) return res.status(200).json({ authenticated: true, mode: 'test' });
       const { sessionSecret } = getPinConfig();
       const expiresAt = readSession(req, sessionSecret);
       if (!expiresAt) return res.status(401).json({ authenticated: false, error: 'session_required' });
-      return res.status(200).json({ authenticated: true, expiresAt, mode: testMode ? 'test' : 'production' });
+      return res.status(200).json({ authenticated: true, expiresAt, mode: 'production' });
     }
     if (req.method === 'DELETE') {
-      if (!hasTrustedOrigin(req)) throw apiError(403, 'invalid_origin', 'გამოსვლის მოთხოვნა უნდა გაიგზავნოს იმავე საიტის დომენიდან.');
-      setSessionCookie(res, '', 0);
+      if (!testMode) {
+        if (!hasTrustedOrigin(req)) throw apiError(403, 'invalid_origin', 'გამოსვლის მოთხოვნა უნდა გაიგზავნოს იმავე საიტის დომენიდან.');
+        setSessionCookie(res, '', 0);
+      }
       return res.status(200).json({ authenticated: false });
     }
     if (req.method !== 'POST') {
@@ -731,10 +747,10 @@ module.exports = async function adminApi(req, res) {
       throw apiError(405, 'method_not_allowed', 'მოთხოვნის მეთოდი დაუშვებელია.');
     }
     if (!hasTrustedOrigin(req)) throw apiError(403, 'invalid_origin', 'მოთხოვნა უნდა გაიგზავნოს იმავე საიტის დომენიდან.');
-
     const body = parseBody(req.body);
-    const { pin, sessionSecret } = getPinConfig();
     if (body.action === 'login') {
+      if (testMode) return res.status(200).json({ authenticated: true, mode: 'test' });
+      const { pin, sessionSecret } = getPinConfig();
       if (await pinAttemptsBlocked(req, sessionSecret, testMode)) {
         throw apiError(429, 'pin_rate_limited', 'PIN-ის მცდელობების ლიმიტი ამოიწურა. სცადე 15 წუთის შემდეგ.');
       }
@@ -744,17 +760,19 @@ module.exports = async function adminApi(req, res) {
         if (blocked) throw apiError(429, 'pin_rate_limited', 'PIN-ის მცდელობების ლიმიტი ამოიწურა. სცადე 15 წუთის შემდეგ.');
         throw apiError(401, 'invalid_pin', 'PIN არასწორია.');
       }
-      if (!testMode) getFirebaseServices();
+      getFirebaseServices();
       await clearPinAttempts(req, sessionSecret, testMode);
       const expiresAt = Date.now() + SESSION_DURATION_MS;
       const payload = `${expiresAt}.${randomUUID()}`;
       setSessionCookie(res, `${payload}.${hmac(payload, sessionSecret)}`, SESSION_DURATION_MS / 1000);
-      return res.status(200).json({ authenticated: true, expiresAt, mode: testMode ? 'test' : 'production' });
+      return res.status(200).json({ authenticated: true, expiresAt, mode: 'production' });
     }
-
-    const expiresAt = readSession(req, sessionSecret);
-    if (!expiresAt) throw apiError(401, 'session_expired', 'ადმინისტრატორის PIN სესია ვადაგასულია. შედი თავიდან.');
-    if (Date.now() >= expiresAt) throw apiError(401, 'session_expired', 'ადმინისტრატორის PIN სესია ვადაგასულია. შედი თავიდან.');
+    if (!testMode) {
+      const { sessionSecret } = getPinConfig();
+      const expiresAt = readSession(req, sessionSecret);
+      if (!expiresAt) throw apiError(401, 'session_expired', 'ადმინისტრატორის PIN სესია ვადაგასულია. შედი თავიდან.');
+      if (Date.now() >= expiresAt) throw apiError(401, 'session_expired', 'ადმინისტრატორის PIN სესია ვადაგასულია. შედი თავიდან.');
+    }
     if (!testMode) getFirebaseServices();
     const result = await executeAction(String(body.action || ''), body, testMode);
     return res.status(200).json({ ok: true, result });

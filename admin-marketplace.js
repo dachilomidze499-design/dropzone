@@ -43,7 +43,8 @@
   }
 
   function adminReady() {
-    return document.getElementById('admin-dashboard-content')?.hidden === false;
+    const dashboard = document.getElementById('admin-dashboard-content');
+    return dashboard?.hidden === false && dashboard.dataset.authenticated === 'true';
   }
 
   function subscribe(collection, key, rootId, renderer) {
