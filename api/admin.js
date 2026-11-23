@@ -729,17 +729,14 @@ module.exports = async function adminApi(req, res) {
 
   try {
     if (req.method === 'GET') {
-      if (testMode) return res.status(200).json({ authenticated: true, mode: 'test' });
       const { sessionSecret } = getPinConfig();
       const expiresAt = readSession(req, sessionSecret);
       if (!expiresAt) return res.status(401).json({ authenticated: false, error: 'session_required' });
-      return res.status(200).json({ authenticated: true, expiresAt, mode: 'production' });
+      return res.status(200).json({ authenticated: true, expiresAt, mode: testMode ? 'test' : 'production' });
     }
     if (req.method === 'DELETE') {
-      if (!testMode) {
-        if (!hasTrustedOrigin(req)) throw apiError(403, 'invalid_origin', 'გამოსვლის მოთხოვნა უნდა გაიგზავნოს იმავე საიტის დომენიდან.');
-        setSessionCookie(res, '', 0);
-      }
+      if (!hasTrustedOrigin(req)) throw apiError(403, 'invalid_origin', 'გამოსვლის მოთხოვნა უნდა გაიგზავნოს იმავე საიტის დომენიდან.');
+      setSessionCookie(res, '', 0);
       return res.status(200).json({ authenticated: false });
     }
     if (req.method !== 'POST') {
@@ -749,7 +746,6 @@ module.exports = async function adminApi(req, res) {
     if (!hasTrustedOrigin(req)) throw apiError(403, 'invalid_origin', 'მოთხოვნა უნდა გაიგზავნოს იმავე საიტის დომენიდან.');
     const body = parseBody(req.body);
     if (body.action === 'login') {
-      if (testMode) return res.status(200).json({ authenticated: true, mode: 'test' });
       const { pin, sessionSecret } = getPinConfig();
       if (await pinAttemptsBlocked(req, sessionSecret, testMode)) {
         throw apiError(429, 'pin_rate_limited', 'PIN-ის მცდელობების ლიმიტი ამოიწურა. სცადე 15 წუთის შემდეგ.');
@@ -760,19 +756,17 @@ module.exports = async function adminApi(req, res) {
         if (blocked) throw apiError(429, 'pin_rate_limited', 'PIN-ის მცდელობების ლიმიტი ამოიწურა. სცადე 15 წუთის შემდეგ.');
         throw apiError(401, 'invalid_pin', 'PIN არასწორია.');
       }
-      getFirebaseServices();
+      if (!testMode) getFirebaseServices();
       await clearPinAttempts(req, sessionSecret, testMode);
       const expiresAt = Date.now() + SESSION_DURATION_MS;
       const payload = `${expiresAt}.${randomUUID()}`;
       setSessionCookie(res, `${payload}.${hmac(payload, sessionSecret)}`, SESSION_DURATION_MS / 1000);
-      return res.status(200).json({ authenticated: true, expiresAt, mode: 'production' });
+      return res.status(200).json({ authenticated: true, expiresAt, mode: testMode ? 'test' : 'production' });
     }
-    if (!testMode) {
-      const { sessionSecret } = getPinConfig();
-      const expiresAt = readSession(req, sessionSecret);
-      if (!expiresAt) throw apiError(401, 'session_expired', 'ადმინისტრატორის PIN სესია ვადაგასულია. შედი თავიდან.');
-      if (Date.now() >= expiresAt) throw apiError(401, 'session_expired', 'ადმინისტრატორის PIN სესია ვადაგასულია. შედი თავიდან.');
-    }
+    const { sessionSecret } = getPinConfig();
+    const expiresAt = readSession(req, sessionSecret);
+    if (!expiresAt) throw apiError(401, 'session_expired', 'ადმინისტრატორის PIN სესია ვადაგასულია. შედი თავიდან.');
+    if (Date.now() >= expiresAt) throw apiError(401, 'session_expired', 'ადმინისტრატორის PIN სესია ვადაგასულია. შედი თავიდან.');
     if (!testMode) getFirebaseServices();
     const result = await executeAction(String(body.action || ''), body, testMode);
     return res.status(200).json({ ok: true, result });

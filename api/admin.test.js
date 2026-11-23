@@ -67,22 +67,32 @@ async function dispatch(method, body, { cookie = '', origin = 'http://dropzone.t
   return response;
 }
 
-test('local test mode serves isolated admin data without a PIN session', async () => {
-  delete process.env.ADMIN_PIN;
-  delete process.env.ADMIN_SESSION_SECRET;
-  const session = await dispatch('GET');
+test('local test mode requires the configured PIN and serves isolated admin data', async () => {
+  const unauthenticated = await dispatch('GET');
+  assert.equal(unauthenticated.statusCode, 401);
+
+  const invalidLogin = await dispatch('POST', { action: 'login', pin: 'wrong-pin' });
+  assert.equal(invalidLogin.statusCode, 401);
+  assert.equal(invalidLogin.body.error, 'invalid_pin');
+
+  const login = await dispatch('POST', { action: 'login', pin: testPin });
+  assert.equal(login.statusCode, 200);
+  assert.equal(login.body.mode, 'test');
+  const cookie = login.headers['Set-Cookie'].split(';')[0];
+
+  const session = await dispatch('GET', undefined, { cookie });
   assert.equal(session.statusCode, 200);
   assert.equal(session.body.authenticated, true);
   assert.equal(session.body.mode, 'test');
 
-  const snapshot = await dispatch('POST', { action: 'snapshot' });
+  const snapshot = await dispatch('POST', { action: 'snapshot' }, { cookie });
   assert.equal(snapshot.statusCode, 200);
   assert.equal(snapshot.body.result.products[0].id, 'test-product-pending');
   assert.equal(snapshot.body.result.users[0].id, 'test-seller');
 
-  const login = await dispatch('POST', { action: 'login' });
-  assert.equal(login.statusCode, 200);
-  assert.equal(login.body.mode, 'test');
+  const logout = await dispatch('DELETE', undefined, { cookie });
+  assert.equal(logout.statusCode, 200);
+  assert.match(logout.headers['Set-Cookie'], /Max-Age=0/);
 });
 
 test('missing or invalid PIN session configuration is reported without exposing values', async () => {

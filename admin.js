@@ -205,7 +205,7 @@ function renderUsers() {
 function showAuthenticatedDashboard() {
   if (!adminPinVerified) return;
   dashboardContent.hidden = false;
-  logoutButton.hidden = window.DropZoneAdminMode === 'test';
+  logoutButton.hidden = false;
   connectionLabel.textContent = window.DropZoneAdminMode === 'test'
     ? 'ლოკალური სატესტო რეჟიმი · მონაცემები დროებითია'
     : 'ადმინისტრატორი ავტორიზებულია · სერვერული PIN';
@@ -411,7 +411,7 @@ function startAdminDashboard() {
   remoteUsers = [];
   dashboardContent.hidden = false;
   dashboardContent.dataset.authenticated = 'true';
-  logoutButton.hidden = window.DropZoneAdminMode === 'test';
+  logoutButton.hidden = false;
   connectionLabel.textContent = window.DropZoneAdminMode === 'test'
     ? 'ლოკალური სატესტო მონაცემები იტვირთება…'
     : 'PIN სესია აქტიურია · მონაცემები იტვირთება…';
@@ -452,14 +452,6 @@ async function restoreAdminPinSession() {
   try {
     const result = await adminApi.getSession();
     window.DropZoneAdminMode = result.mode || 'production';
-    if (result.mode === 'test') {
-      adminPinVerified = true;
-      adminPinExpiresAt = 0;
-      pinCard.hidden = true;
-      dashboardContent.hidden = false;
-      startAdminDashboard();
-      return;
-    }
     if (!result.authenticated) {
       pinMessage.textContent = 'შესასვლელად შეიყვანე PIN.';
       pinCard.hidden = false;
