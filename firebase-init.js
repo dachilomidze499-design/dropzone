@@ -148,7 +148,14 @@
         text: message,
         createdAt: firebase.firestore.FieldValue.serverTimestamp()
       });
-      return ref.id;
+      return {
+        id: ref.id,
+        productId: String(productId).slice(0, 160),
+        userId: user.uid,
+        rating: score,
+        text: message,
+        createdAt: new Date()
+      };
     },
     subscribeProductReviews(productId, onChange, onError) {
       if (!productId) throw new Error('ნამუშევრის მითითება სავალდებულოა.');
@@ -416,7 +423,9 @@
       }
       const total = Number(order.total);
       if (!Number.isFinite(total) || total <= 0) throw new Error('შეკვეთის ჯამი არასწორია.');
-      const ref = db.collection('orders').doc();
+      const requestedId = String(order.id || '').trim();
+      if (requestedId.length > 160 || requestedId.includes('/')) throw new Error('შეკვეთის ID არასწორია.');
+      const ref = requestedId ? db.collection('orders').doc(requestedId) : db.collection('orders').doc();
       const record = {
         buyerUid: user.uid,
         buyerEmail: user.email || '',
@@ -430,6 +439,120 @@
         status: 'pending',
         createdAt: firebase.firestore.FieldValue.serverTimestamp(),
         updatedAt: firebase.firestore.FieldValue.serverTimestamp()
+      };
+      return db.runTransaction(async transaction => {
+        const snapshot = await transaction.get(ref);
+        if (snapshot.exists) {
+          if (snapshot.data().buyerUid !== user.uid) throw new Error('შეკვეთის ID უკვე გამოყენებულია.');
+          return { ...snapshot.data(), id: ref.id };
+        }
+        transaction.set(ref, record);
+        return { ...record, id: ref.id };
+      });
+    },
+    async recordSimulatedSale(orderId) {
+      const user = firebase.auth?.().currentUser;
+      const id = String(orderId || '').trim();
+      if (!user || !id || id.length > 160 || id.includes('/')) {
+        throw new Error('შეკვეთის ფინანსური ჩანაწერის მონაცემები არასწორია.');
+      }
+      const orderRef = db.collection('orders').doc(id);
+      const settingsRef = settings;
+      const transactionRef = db.collection('transactions').doc(id);
+      return db.runTransaction(async transaction => {
+        const [orderSnapshot, settingsSnapshot, existingSnapshot] = await Promise.all([
+          transaction.get(orderRef),
+          transaction.get(settingsRef),
+          transaction.get(transactionRef)
+        ]);
+        if (!orderSnapshot.exists || orderSnapshot.data().buyerUid !== user.uid
+          || orderSnapshot.data().paymentStatus !== 'simulated') {
+          throw new Error('შეკვეთის ფინანსური ჩანაწერის შექმნა ვერ დადასტურდა.');
+        }
+        if (existingSnapshot.exists) return { ...existingSnapshot.data(), id: transactionRef.id };
+        const rate = settingsSnapshot.exists ? Number(settingsSnapshot.data().commissionRate) : 12;
+        const total = Number(orderSnapshot.data().total);
+        if (!Number.isFinite(rate) || rate < 0 || rate > 100 || !Number.isFinite(total) || total <= 0) {
+          throw new Error('შენახული საკომისიო ან შეკვეთის თანხა არასწორია.');
+        }
+        const commission = total * rate / 100;
+        const record = {
+          type: 'sale',
+          buyer: orderSnapshot.data().buyerEmail || '',
+          vendorId: orderSnapshot.data().sellerId || '',
+          description: `Marketplace order ${id}`,
+          method: 'simulated',
+          gmv: total,
+          netRevenue: commission,
+          artistPayout: total - commission,
+          payoutStatus: 'pending-delivery',
+          transactionDate: firebase.firestore.FieldValue.serverTimestamp(),
+          createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+          buyerUid: user.uid,
+          orderId: id,
+          commissionRate: rate,
+          simulated: true
+        };
+        transaction.set(transactionRef, record);
+        return { ...record, id: transactionRef.id };
+      });
+    },
+    async recordSimulatedPayment(request) {
+      const amount = Number(request.amount);
+      const type = String(request.type || '');
+      const orderId = String(request.orderId || '').trim();
+      const iban = String(request.recipientIban || '').replace(/\s/g, '').toUpperCase();
+      if (!['order', 'topup', 'package', 'boost'].includes(type)
+        || !Number.isFinite(amount) || amount <= 0
+        || !orderId || orderId.length > 160 || orderId.includes('/')
+        || !/^GE\\d{2}[A-Z]{2}\\d{15,16}$/.test(iban)) {
+        throw new Error('გადახდის ჩანაწერის მონაცემები არასწორია.');
+      }
+      const user = firebase.auth?.().currentUser;
+      const sourceDetails = request.details || {};
+      const details = type === 'order' ? {
+        productIds: Array.isArray(sourceDetails.productIds)
+          ? sourceDetails.productIds.map(String).slice(0, 20) : [],
+        sellerId: String(sourceDetails.sellerId || '').slice(0, 160)
+      } : type === 'boost' ? {
+        productId: String(sourceDetails.productId || '').slice(0, 160),
+        tier: String(sourceDetails.tier || '').slice(0, 32)
+      } : type === 'package' ? {
+        package: String(sourceDetails.package || '').slice(0, 32)
+      } : {};
+      const ref = paymentRequests.doc();
+      await ref.set({
+        transactionId: orderId,
+        iban,
+        amount,
+        type,
+        orderId,
+        details,
+        email: String(request.email || user?.email || '').slice(0, 254),
+        status: 'approved',
+        simulated: true,
+        userUid: user?.uid || '',
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+      return { id: ref.id };
+    },
+    async createPayoutRequest(request) {
+      const user = firebase.auth?.().currentUser;
+      if (!user || !user.email) throw new Error('Payout-ის მოთხოვნისთვის Firebase ანგარიშში შესვლაა საჭირო.');
+      const amount = Number(request.amount);
+      const iban = String(request.iban || '').replace(/\s/g, '').toUpperCase();
+      if (!Number.isFinite(amount) || amount <= 0 || !/^GE\\d{2}[A-Z]{2}\\d{15,16}$/.test(iban)) {
+        throw new Error('Payout-ის მონაცემები არასწორია.');
+      }
+      const ref = db.collection('payouts').doc();
+      const record = {
+        vendorUid: user.uid,
+        vendorId: user.email,
+        email: user.email,
+        iban,
+        amount,
+        status: 'pending',
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
       };
       await ref.set(record);
       return { ...record, id: ref.id };
@@ -585,12 +708,34 @@
           chatId,
           participants,
           productId: productSnapshot.id,
+          buyerUid: user.uid,
+          sellerUid,
           lastMessage: '',
           updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
           createdAt: firebase.firestore.FieldValue.serverTimestamp()
         });
       });
       return { chatId, sellerUid, productId: productSnapshot.id };
+    },
+    subscribeUserChats(onChange, onError) {
+      const user = firebase.auth?.().currentUser;
+      if (!user) throw new Error('შეტყობინებების სანახავად ანგარიშში შესვლაა საჭირო.');
+      return chats.where('participants', 'array-contains', user.uid).limit(100).onSnapshot(snapshot => {
+        onChange(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id })).sort((left, right) => {
+          const time = value => typeof value?.toDate === 'function' ? value.toDate().getTime() : new Date(value || 0).getTime();
+          return time(right.updatedAt) - time(left.updatedAt);
+        }));
+      }, onError);
+    },
+    async getChat(chatId) {
+      const user = firebase.auth?.().currentUser;
+      if (!user || !chatId) throw new Error('ჩატის სანახავად ანგარიშში შესვლა საჭიროა.');
+      const snapshot = await chats.doc(String(chatId)).get();
+      if (!snapshot.exists || !Array.isArray(snapshot.data().participants)
+        || !snapshot.data().participants.includes(user.uid)) {
+        throw new Error('ჩატი ვერ მოიძებნა ან მასზე წვდომა არ გაქვს.');
+      }
+      return { ...snapshot.data(), id: snapshot.id };
     },
     subscribeChatMessages(chatId, onChange, onError) {
       if (!chatId) throw new Error('ჩატის მითითება სავალდებულოა.');
@@ -627,6 +772,14 @@
     },
     subscribeSettings(onChange, onError) {
       return settings.onSnapshot(snapshot => onChange(snapshot.exists ? snapshot.data() : {}), onError);
+    },
+    async getCommissionRate() {
+      const snapshot = await settings.get();
+      const rate = snapshot.exists ? Number(snapshot.data().commissionRate) : 12;
+      if (!Number.isFinite(rate) || rate < 0 || rate > 100) {
+        throw new Error('შენახული საკომისიოს მნიშვნელობა არასწორია.');
+      }
+      return rate;
     },
     async createProduct(product, file) {
       const ref = products.doc();

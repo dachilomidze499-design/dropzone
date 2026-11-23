@@ -1464,27 +1464,22 @@ body[data-theme="dark"] .site-header { background: rgba(243, 238, 227, .9); }
 .editorial-page.contact-page .contact-details,
 .editorial-page.contact-page .feedback-section { display: none; }
 .product-share-button {
-  position: absolute;
-  z-index: 3;
-  top: 47px;
-  left: 10px;
+  position: relative;
   display: grid;
-  width: 30px;
-  height: 30px;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
   place-items: center;
-  padding: 6px;
-  border: 1px solid rgba(17, 17, 17, .2);
+  padding: 0;
+  border: 1px solid var(--line);
   border-radius: 50%;
-  background: rgba(243, 238, 227, .94);
-  color: #111;
+  background: var(--panel-2);
+  color: var(--white);
   cursor: pointer;
   transition: color .2s ease, background-color .2s ease, transform .2s ease;
 }
 .product-share-button svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
 .product-share-button:hover { transform: translateY(-2px); background: var(--orange); color: #fff; }
-.product-card.promo-premium .product-share-button,
-.product-card.promo-vipplus .product-share-button,
-.product-card.promo-vip .product-share-button { top: 47px; }
 
 @media (max-width: 720px) {
   .site-header:not(.admin-header) { height: auto; min-height: 64px; padding: 7px 12px; gap: 6px; }

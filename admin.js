@@ -23,6 +23,8 @@ let adminSettingsUnsubscribe = null;
 let adminPinVerified = false;
 let adminPinExpiryTimer = null;
 let adminPinExpiresAt = 0;
+window.DropZoneCommissionRate = 12;
+window.DropZoneCommissionRateReady = false;
 
 function stopAdminDataSubscriptions() {
   [adminProductsUnsubscribe, adminPaymentsUnsubscribe, adminUsersUnsubscribe, adminSettingsUnsubscribe]
@@ -71,6 +73,8 @@ document.addEventListener('dropzone-admin-session-expired', () => {
 });
 
 commissionForm.elements.commissionRate.value = '12';
+commissionForm.elements.commissionRate.disabled = true;
+commissionForm.querySelector('button[type="submit"]').disabled = true;
 
 function escapeAdminHTML(value) {
   return String(value ?? '').replace(/[&<>"']/g, character => ({
@@ -91,6 +95,7 @@ function productMarkup(product) {
     : `<img src="${escapeAdminHTML(mediaUrl)}" alt="">`;
   const actions = `<div class="admin-row-actions">
     ${status === 'Pending' ? `<button type="button" class="admin-verify" data-approve="${id}">დამტკიცება / Approve</button><button type="button" class="admin-delete" data-reject="${id}">უარყოფა / Reject</button>` : ''}
+    <button type="button" class="admin-verify" data-edit="${id}">რედაქტირება / Edit</button>
     <button type="button" class="admin-delete" data-delete="${id}">წაშლა / Delete</button>
   </div>`;
   return `<article class="admin-listing-row" data-product-id="${id}">
@@ -159,11 +164,21 @@ function userMarkup(user) {
   const verified = user.verified === true;
   const vip = user.vip === true;
   const role = user.role === 'business' ? 'ხელოვანი / მაღაზია' : 'მყიდველი / კერძო პირი';
+  const socials = user.socials && typeof user.socials === 'object' ? user.socials : {};
+  const profileDetails = [
+    user.storeName || user.businessName ? `მაღაზია: ${user.storeName || user.businessName}` : '',
+    user.socials?.phone || user.phone ? `ტელეფონი: ${user.socials?.phone || user.phone}` : '',
+    user.address ? `მისამართი: ${user.address}` : '',
+    user.bio ? `აღწერა: ${user.bio}` : '',
+    socials.website ? `ვებგვერდი: ${socials.website}` : '',
+    socials.instagram ? `Instagram: ${socials.instagram}` : ''
+  ].filter(Boolean);
   return `<article class="admin-user-card">
     <div class="admin-user-details">
-      <strong>${escapeAdminHTML(user.name || 'უსახელო მომხმარებელი')}</strong>
+      <strong>${escapeAdminHTML(user.name || user.displayName || 'უსახელო მომხმარებელი')}</strong>
       <small>${escapeAdminHTML(user.email || 'ელ-ფოსტა მითითებული არ არის')}</small>
       <small>${escapeAdminHTML(role)} · რეგისტრაცია: ${escapeAdminHTML(userDateLabel(user.createdAt))}</small>
+      ${profileDetails.map(detail => `<small>${escapeAdminHTML(detail)}</small>`).join('')}
       <div class="admin-user-statuses">
         <span class="${banned ? 'is-banned' : 'is-active'}">${banned ? 'დაბლოკილი' : 'აქტიური'}</span>
         ${verified ? '<span>ვერიფიცირებული</span>' : ''}
@@ -190,7 +205,7 @@ function renderUsers() {
   const query = String(usersSearch.value || '').trim().toLocaleLowerCase();
   const filter = usersFilter.value;
   const filtered = remoteUsers.filter(user => {
-    const matchesText = `${user.name || ''} ${user.email || ''}`.toLocaleLowerCase().includes(query);
+    const matchesText = `${user.name || user.displayName || ''} ${user.email || ''} ${user.storeName || user.businessName || ''} ${user.socials?.phone || user.phone || ''}`.toLocaleLowerCase().includes(query);
     const matchesFilter = filter === 'artists'
       ? user.role === 'business'
       : filter === 'banned' ? user.banned === true : true;
@@ -208,7 +223,9 @@ function showAuthenticatedDashboard() {
   logoutButton.hidden = false;
   connectionLabel.textContent = window.DropZoneAdminMode === 'test'
     ? 'ლოკალური სატესტო რეჟიმი · მონაცემები დროებითია'
-    : 'ადმინისტრატორი ავტორიზებულია · სერვერული PIN';
+    : window.DropZoneAdminMode === 'local'
+      ? 'მხოლოდ ამ ბრაუზერის მონაცემები · საერთო სერვერის კონფიგურაცია მიუწვდომელია'
+      : 'ადმინისტრატორი ავტორიზებულია · სერვერული PIN';
   dashboardContent.dataset.authenticated = 'true';
   document.dispatchEvent(new Event('dropzone-admin-ready'));
 }
@@ -230,6 +247,27 @@ async function updateProduct(id, status) {
   else await adminApi.updateProduct(id, { approvalStatus: status, reviewedAt: new Date().toISOString() });
 }
 
+async function editProduct(id) {
+  const product = products().find(item => String(item.id) === String(id));
+  if (!product) throw new Error('პროდუქტი ვერ მოიძებნა.');
+  const name = window.prompt('პროდუქტის სახელი', product.name || '');
+  if (name === null) return;
+  const priceValue = window.prompt('ფასი (₾)', String(product.price ?? ''));
+  if (priceValue === null) return;
+  const description = window.prompt('აღწერა', product.description || '');
+  if (description === null) return;
+  const price = Number(priceValue);
+  if (!name.trim() || !Number.isFinite(price) || price <= 0) {
+    throw new Error('სახელი აუცილებელია და ფასი უნდა იყოს დადებითი რიცხვი.');
+  }
+  await adminApi.updateProduct(id, {
+    name: name.trim(),
+    price,
+    description: description.trim(),
+    updatedAt: new Date().toISOString()
+  });
+}
+
 document.querySelector('.admin-tabs').addEventListener('click', event => {
   const tab = event.target.closest('[data-admin-tab]');
   if (!tab) return;
@@ -245,8 +283,21 @@ document.querySelector('.admin-tabs').addEventListener('click', event => {
 
 document.querySelectorAll('#admin-pending-products, #admin-all-products').forEach(root => {
   root.addEventListener('click', async event => {
-    const button = event.target.closest('[data-approve], [data-reject], [data-delete]');
+    const button = event.target.closest('[data-approve], [data-reject], [data-delete], [data-edit]');
     if (!button) return;
+    if (button.hasAttribute('data-edit')) {
+      button.disabled = true;
+      try {
+        await editProduct(button.dataset.edit);
+        renderProducts();
+      } catch (error) {
+        console.error('Unable to edit product.', error);
+        connectionLabel.textContent = error.message || 'პროდუქტის რედაქტირება ვერ მოხერხდა.';
+      } finally {
+        button.disabled = false;
+      }
+      return;
+    }
     const id = button.dataset.approve || button.dataset.reject || button.dataset.delete;
     const status = button.hasAttribute('data-delete') ? 'Deleted' : button.hasAttribute('data-reject') ? 'Rejected' : 'Approved';
     button.disabled = true;
@@ -332,7 +383,15 @@ commissionForm.addEventListener('submit', async event => {
   }
   try {
     await adminApi.saveCommissionRate(rate);
+    window.DropZoneCommissionRate = rate;
+    commissionForm.elements.commissionRate.value = rate.toFixed(2);
     message.textContent = 'საკომისიო შენახულია.';
+    try {
+      window.localStorage.setItem('dz-commission-rate', JSON.stringify(rate));
+    } catch (error) {
+      console.error('Unable to mirror the saved commission rate to this browser.', error);
+      message.textContent = 'საკომისიო სერვერზე შენახულია, მაგრამ ამ ბრაუზერში მყისიერი სინქრონიზაცია ვერ მოხერხდა.';
+    }
   } catch (error) {
     console.error('Unable to save commission settings.', error);
     message.textContent = error.message || 'საკომისიოს შენახვა ვერ მოხერხდა.';
@@ -406,6 +465,9 @@ document.querySelectorAll('[data-admin-tab]').forEach(button => {
 function startAdminDashboard() {
   if (!adminPinVerified || !adminApi) return;
   stopAdminDataSubscriptions();
+  window.DropZoneCommissionRateReady = false;
+  commissionForm.elements.commissionRate.disabled = true;
+  commissionForm.querySelector('button[type="submit"]').disabled = true;
   remoteProducts = [];
   remotePayments = [];
   remoteUsers = [];
@@ -414,7 +476,9 @@ function startAdminDashboard() {
   logoutButton.hidden = false;
   connectionLabel.textContent = window.DropZoneAdminMode === 'test'
     ? 'ლოკალური სატესტო მონაცემები იტვირთება…'
-    : 'PIN სესია აქტიურია · მონაცემები იტვირთება…';
+    : window.DropZoneAdminMode === 'local'
+      ? 'ამ ბრაუზერის მონაცემები იტვირთება…'
+      : 'PIN სესია აქტიურია · მონაცემები იტვირთება…';
   document.dispatchEvent(new Event('dropzone-admin-ready'));
 
   adminProductsUnsubscribe = adminApi.subscribeAdminProducts(items => {
@@ -427,9 +491,16 @@ function startAdminDashboard() {
     renderPayments();
   }, handleAdminApiError);
   adminSettingsUnsubscribe = adminApi.subscribeSettings(settings => {
-    if (typeof settings.commissionRate === 'number') {
-      commissionForm.elements.commissionRate.value = settings.commissionRate.toFixed(2);
+    const savedRate = settings.commissionRate === undefined ? 12 : Number(settings.commissionRate);
+    if (!Number.isFinite(savedRate) || savedRate < 0 || savedRate > 100) {
+      handleAdminApiError(new Error('შენახული საკომისიოს მნიშვნელობა არასწორია.'));
+      return;
     }
+    window.DropZoneCommissionRate = savedRate;
+    window.DropZoneCommissionRateReady = true;
+    commissionForm.elements.commissionRate.value = savedRate.toFixed(2);
+    commissionForm.elements.commissionRate.disabled = false;
+    commissionForm.querySelector('button[type="submit"]').disabled = false;
   }, handleAdminApiError);
 
   usersMessage.textContent = 'მომხმარებლები იტვირთება…';
@@ -444,11 +515,6 @@ function startAdminDashboard() {
 }
 
 async function restoreAdminPinSession() {
-  if (!['http:', 'https:'].includes(location.protocol)) {
-    connectionLabel.textContent = 'ლოკალური ტესტისთვის გაუშვი npm run dev';
-    pinMessage.textContent = 'PIN სერვერის გარეშე ვერ მოწმდება. ლოკალური ტესტისთვის გაუშვი npm run dev.';
-    return;
-  }
   try {
     const result = await adminApi.getSession();
     window.DropZoneAdminMode = result.mode || 'production';

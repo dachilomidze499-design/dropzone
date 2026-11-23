@@ -97,11 +97,13 @@ test('local test mode requires the configured PIN and serves isolated admin data
 
 test('missing or invalid PIN session configuration is reported without exposing values', async () => {
   delete process.env.DROPZONE_ADMIN_MODE;
+  process.env.FIREBASE_PROJECT_ID = 'dropzone-test';
+  process.env.FIREBASE_CLIENT_EMAIL = 'admin@dropzone-test.iam.gserviceaccount.com';
+  process.env.FIREBASE_PRIVATE_KEY = 'test-key';
   delete process.env.ADMIN_PIN;
   const missingPin = await dispatch('GET');
-  assert.equal(missingPin.statusCode, 503);
-  assert.equal(missingPin.body.error, 'admin_pin_not_configured');
-  assert.match(missingPin.body.message, /ADMIN_PIN/);
+  assert.equal(missingPin.statusCode, 200);
+  assert.equal(missingPin.body.localFallback, true);
 
   process.env.ADMIN_PIN = testPin;
   process.env.ADMIN_SESSION_SECRET = 'short-secret';
@@ -110,6 +112,32 @@ test('missing or invalid PIN session configuration is reported without exposing 
   assert.equal(shortSecret.body.error, 'admin_session_secret_invalid');
   assert.match(shortSecret.body.message, /ADMIN_SESSION_SECRET/);
   assert.doesNotMatch(shortSecret.body.message, /short-secret/);
+});
+
+test('missing shared-server configuration exposes only a local fallback status', async () => {
+  delete process.env.DROPZONE_ADMIN_MODE;
+  delete process.env.ADMIN_PIN;
+  delete process.env.ADMIN_SESSION_SECRET;
+
+  const status = await dispatch('GET');
+  assert.equal(status.statusCode, 200);
+  assert.deepEqual(status.body, { authenticated: false, localFallback: true, mode: 'local' });
+
+  const snapshot = await dispatch('POST', { action: 'snapshot' });
+  assert.equal(snapshot.statusCode, 503);
+  assert.equal(snapshot.body.error, 'admin_pin_not_configured');
+});
+
+test('admin commission changes persist in the shared settings snapshot', async () => {
+  const login = await dispatch('POST', { action: 'login', pin: testPin });
+  const cookie = login.headers['Set-Cookie'].split(';')[0];
+
+  const saved = await dispatch('POST', { action: 'save-commission', rate: 17.5 }, { cookie });
+  assert.equal(saved.statusCode, 200);
+  assert.deepEqual(saved.body.result, { saved: true });
+
+  const snapshot = await dispatch('POST', { action: 'snapshot' }, { cookie });
+  assert.equal(snapshot.body.result.settings.commissionRate, 17.5);
 });
 
 test('production PIN throttling reports missing Firebase configuration', async () => {
@@ -139,13 +167,15 @@ test('admin mutations reject untrusted origins', async () => {
   assert.equal(response.statusCode, 403);
 });
 
-test('production mode rejects admin API access without a PIN session', async () => {
+test('production mode exposes local fallback status but blocks admin data without a PIN session', async () => {
   delete process.env.DROPZONE_ADMIN_MODE;
   const session = await dispatch('GET');
-  assert.equal(session.statusCode, 401);
+  assert.equal(session.statusCode, 200);
+  assert.equal(session.body.localFallback, true);
 
   const snapshot = await dispatch('POST', { action: 'snapshot' });
   assert.equal(snapshot.statusCode, 401);
+  assert.equal(snapshot.body.error, 'session_expired');
 });
 
 test('local test mode is unavailable on Vercel Preview', async () => {
@@ -155,8 +185,8 @@ test('local test mode is unavailable on Vercel Preview', async () => {
   console.error = (...args) => loggedErrors.push(args);
   try {
     const response = await dispatch('GET');
-    assert.equal(response.statusCode, 401);
-    assert.equal(response.body.error, 'session_required');
+    assert.equal(response.statusCode, 200);
+    assert.equal(response.body.localFallback, true);
     assert.equal(loggedErrors.length, 0);
   } finally {
     console.error = originalConsoleError;

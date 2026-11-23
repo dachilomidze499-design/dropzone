@@ -412,6 +412,17 @@ let siteConfigOverride = {
 };
 let commissionRate = Number(storage.read('dz-commission-rate', 12));
 if (!Number.isFinite(commissionRate) || commissionRate < 0 || commissionRate > 100) commissionRate = 12;
+function applyCommissionRate(value) {
+  const rate = Number(value);
+  if (!Number.isFinite(rate) || rate < 0 || rate > 100) {
+    console.error('Ignoring an invalid commission rate.');
+    return false;
+  }
+  commissionRate = rate;
+  storage.write('dz-commission-rate', commissionRate);
+  updateCommissionPreview();
+  return true;
+}
 const savedAccount = storage.read('dz-user', null);
 if (savedAccount && !users.some(user => user.email === savedAccount.email)) {
   users.push({ ...savedAccount, banned: Boolean(savedAccount.banned) });
@@ -434,18 +445,27 @@ let activePromo = null;
 function validGeorgianIban(value) {
   return /^GE\d{2}[A-Z]{2}\d{15,16}$/.test(String(value || '').replace(/\s/g, '').toUpperCase());
 }
-function openPaymentRequest(type, amount, details = {}, orderId = `DZ-${type.toUpperCase()}-${Date.now()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`) {
+async function openPaymentRequest(type, amount, details = {}, orderId = `DZ-${type.toUpperCase()}-${Date.now()}-${Math.random().toString(36).slice(2, 6).toUpperCase()}`) {
   const recipientIban = type === 'order' ? String(details.sellerIban || PLATFORM_IBAN).replace(/\s/g, '').toUpperCase() : PLATFORM_IBAN;
   if (!Number.isFinite(Number(amount)) || Number(amount) <= 0 || !validGeorgianIban(recipientIban)) {
     showToast(type === 'order' ? tr('ამ ნივთის გამყიდველს ჯერ არ აქვს მითითებული IBAN.') : tr('შეამოწმე თანხა და IBAN'));
     return;
+  }
+  if (type === 'order' && firebaseApi) {
+    try {
+      applyCommissionRate(await firebaseApi.getCommissionRate());
+    } catch (error) {
+      console.error('Unable to load the shared commission rate.', error);
+      showToast(error.message || 'საკომისიოს პარამეტრის ჩატვირთვა ვერ მოხერხდა.');
+      return;
+    }
   }
   activePayment = { type, amount: Number(amount), details, orderId, recipientIban };
   const names = (details.productIds || []).map(id => allProducts.find(product => String(product.id) === String(id))?.name).filter(Boolean);
   const summary = type === 'order' ? names.join(', ') : type === 'topup' ? tr('შიდა ბალანსის შევსება') : type === 'package' ? tr('პაკეტის შეძენა') : type === 'boost' ? tr('განცხადების დაწინაურება') : tr('შეკვეთა');
   const commission = type === 'order' ? amount * commissionRate / 100 : 0;
   const sellerNet = amount - commission;
-  openModal(tr('გადახდის დადასტურება'), `<p class="modal-lead">${escapeHTML(summary)} · <strong>${money(amount)}</strong></p><p class="demo-note">სატესტო გადახდის სიმულაციაა — თანხა რეალურად არ ჩამოიჭრება და ბანკში არ გადაირიცხება. ბარათის მონაცემები ამ საიტზე არ შეგყავს და არ ინახება.</p>${type === 'order' ? `<div class="payment-instructions"><p>საკომისიო (${commissionRate}%)<strong>${money(commission)}</strong></p><p>გამყიდველის წილი<strong>${money(sellerNet)}</strong></p><p>საკომისიოს მიმღები<strong>${escapeHTML(PLATFORM_IBAN)}</strong></p></div>` : ''}<button class="button button-primary" data-simulate-payment type="button">გადახდის სიმულაცია <span>↗</span></button><p class="demo-note">რეალური ბარათით გადახდისა და ავტომატური საბანკო განაწილებისთვის საჭიროა სერვერზე განთავსებული გადახდის პროვაიდერის ინტეგრაცია. Checkout-ის ეს დემო რეალურ თანხებს არ ამუშავებს.</p>`);
+  openModal(tr('გადახდის დადასტურება'), `<p class="modal-lead">${escapeHTML(summary)} · <strong>${money(amount)}</strong></p><p class="demo-note">სატესტო გადახდის სიმულაციაა — თანხა რეალურად არ ჩამოიჭრება და ბანკში არ გადაირიცხება. ბარათის მონაცემები ამ საიტზე არ შეგყავს და არ ინახება.</p>${type === 'order' ? `<div class="payment-instructions" data-commission-preview><p>საკომისიო (${commissionRate}%)<strong data-commission-amount>${money(commission)}</strong></p><p>გამყიდველის წილი<strong data-seller-net>${money(sellerNet)}</strong></p><p>საკომისიოს მიმღები<strong>${escapeHTML(PLATFORM_IBAN)}</strong></p></div>` : ''}<button class="button button-primary" data-simulate-payment type="button">გადახდის სიმულაცია <span>↗</span></button><p class="demo-note">რეალური ბარათით გადახდისა და ავტომატური საბანკო განაწილებისთვის საჭიროა სერვერზე განთავსებული გადახდის პროვაიდერის ინტეგრაცია. Checkout-ის ეს დემო რეალურ თანხებს არ ამუშავებს.</p>`);
 }
 async function completeSimulatedPayment() {
   const payment = activePayment;
@@ -475,7 +495,8 @@ async function completeSimulatedPayment() {
       if (!orderGroup || !orderProducts.length || orderProducts.some(product => !product || product.itemStatus !== 'Available')) {
         throw new Error('შეკვეთის ნივთი აღარ არის ხელმისაწვდომი. კალათა განაახლე.');
       }
-      await firebaseApi.createOrder({
+      const savedOrder = await firebaseApi.createOrder({
+        id: request.orderId,
         sellerId: orderGroup.sellerId,
         items: orderProducts.map(product => ({
           productId: product.id,
@@ -488,8 +509,38 @@ async function completeSimulatedPayment() {
         buyerPhone: checkoutBuyer.phone,
         deliveryAddress: checkoutBuyer.address
       });
+      const sale = await firebaseApi.recordSimulatedSale(savedOrder.id);
+      applyCommissionRate(sale.commissionRate);
     }
+    if (firebaseApi) await firebaseApi.recordSimulatedPayment(request);
     approvePaymentRequest(request);
+    if (request.type === 'order' && !firebaseApi) {
+      const orderGroup = request.details;
+      const items = (orderGroup.productIds || []).map(id => allProducts.find(product => String(product.id) === String(id)))
+        .filter(Boolean)
+        .map(product => ({
+          productId: product.id,
+          name: productName(product),
+          image: product.mediaUrl || product.image || '',
+          price: Number(product.price)
+        }));
+      const orders = storage.read('dz-orders', []);
+      orders.unshift({
+        id: request.orderId,
+        buyerName: orderGroup.buyer?.name || '',
+        buyerEmail: orderGroup.buyer?.email || '',
+        buyerPhone: orderGroup.buyer?.phone || '',
+        deliveryAddress: orderGroup.buyer?.address || '',
+        sellerId: orderGroup.sellerId || '',
+        items,
+        total: request.amount,
+        paymentStatus: 'simulated',
+        status: 'pending',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
+      });
+      storage.write('dz-orders', orders);
+    }
     request.status = 'approved';
     request.simulated = true;
     paymentRequests.unshift(request);
@@ -637,6 +688,21 @@ let orderHistoryUnsubscribe = null;
 let chatMessagesUnsubscribe = null;
 let productReviewsUnsubscribe = null;
 let chatRequestToken = 0;
+let activeProductReviews = [];
+let activeChatContext = null;
+let savedProductReviews = storage.read('dz-product-reviews', []);
+if (!Array.isArray(savedProductReviews)) savedProductReviews = [];
+function updateCommissionPreview() {
+  const preview = modalRoot?.querySelector('[data-commission-preview]');
+  if (!preview || activePayment?.type !== 'order') return;
+  const commission = activePayment.amount * commissionRate / 100;
+  const commissionRoot = preview.querySelector('[data-commission-amount]');
+  const sellerNetRoot = preview.querySelector('[data-seller-net]');
+  if (commissionRoot) commissionRoot.textContent = money(commission);
+  if (sellerNetRoot) sellerNetRoot.textContent = money(activePayment.amount - commission);
+  const rateLabel = preview.querySelector('p:first-child');
+  if (rateLabel) rateLabel.firstChild.textContent = `საკომისიო (${commissionRate}%)`;
+}
 const money = value => `${Number(value).toLocaleString(state.language === 'ka' ? 'ka-GE' : state.language === 'ru' ? 'ru-RU' : 'en-US')} ${translations[state.language]?.currency || '₾'}`;
 const escapeHTML = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char]);
 const arrowIcon = '<svg class="ui-arrow-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg>';
@@ -892,6 +958,31 @@ function productShareUrl(productId) {
   url.searchParams.set('product', String(productId));
   return url.href;
 }
+function getLocalProductReviews(productId) {
+  return savedProductReviews.filter(review => String(review.productId) === String(productId));
+}
+function reviewSummary(reviews) {
+  const count = reviews.length;
+  const average = count ? reviews.reduce((sum, review) => sum + Number(review.rating || 0), 0) / count : 0;
+  return { count, average };
+}
+function ratingStarsMarkup(rating) {
+  const score = Math.max(0, Math.min(5, Number(rating) || 0));
+  const stars = Array.from({ length: 5 }, (_, index) => {
+    const fill = Math.max(0, Math.min(1, score - index));
+    return `<svg class="rating-star" style="--star-fill:${Math.round(fill * 100)}%" viewBox="0 0 24 24" aria-hidden="true"><path class="rating-star-empty" d="m12 3 2.7 5.5 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1-4.4-4.3 6.1-.9L12 3Z"/><path class="rating-star-fill" d="m12 3 2.7 5.5 6.1.9-4.4 4.3 1 6.1-5.4-2.9-5.4 2.9 1-6.1-4.4-4.3 6.1-.9L12 3Z"/></svg>`;
+  }).join('');
+  return `<span class="rating-stars" aria-label="${score.toFixed(1)} / 5">${stars}</span>`;
+}
+function productRatingMarkup(product) {
+  const localSummary = reviewSummary(getLocalProductReviews(product.id));
+  const average = Number.isFinite(Number(product.ratingAverage)) ? Number(product.ratingAverage) : localSummary.average;
+  const count = Number.isFinite(Number(product.ratingCount)) ? Number(product.ratingCount) : localSummary.count;
+  return count ? `<div class="product-rating">${ratingStarsMarkup(average)}<span>${average.toFixed(1)} (${count})</span></div>` : '';
+}
+function shareButtonMarkup(productId, placement) {
+  return `<button class="product-share-button product-share-button--${placement}" data-share-product="${escapeHTML(productId)}" type="button" aria-label="${escapeHTML(tr('ნამუშევრის გაზიარება'))}" title="${escapeHTML(tr('ნამუშევრის გაზიარება'))}"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M5 13v6h14v-6"/></svg></button>`;
+}
 function productCard(product, index) {
   const favorite = state.favorites.includes(product.id);
   const promotion = product.promotion || 'free';
@@ -902,15 +993,15 @@ function productCard(product, index) {
   return `<article class="product-card ${product.sellerType === 'business' ? 'verified-card' : ''} promo-${promotion}" data-product="${escapeHTML(product.id)}" style="--card-delay:${Math.min(index * 45, 360)}ms">
     <button class="product-image" type="button" data-view="${escapeHTML(product.id)}" aria-label="${escapeHTML(productName(product))} — ${escapeHTML(tr('ნივთის დეტალები'))}">${media}<span class="product-category">${escapeHTML(tr(categoryForProduct(product)))}</span>${isLocalMakerProduct(product) ? `<span class="local-maker-badge">${sparkleIcon}<span>${escapeHTML(tr('ადგილობრივი შემქმნელი'))}</span></span>` : ''}${badge ? `<span class="promo-badge">${badge}</span>` : ''}${product.sellerType === 'business' ? `<span class="verified-mark"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m5 12 4 4L19 6"/></svg><span>${escapeHTML(sellerLabel(product))}</span></span>` : ''}</button>
     <button class="favorite-button ${favorite ? 'is-favorite' : ''}" data-favorite="${escapeHTML(product.id)}" type="button" aria-label="${favorite ? 'ფავორიტებიდან წაშლა' : 'ფავორიტებში დამატება'}"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 8.6c0 5-8.8 10.1-8.8 10.1S3.2 13.6 3.2 8.6a4.6 4.6 0 0 1 8.8-2.8 4.6 4.6 0 0 1 8.8 2.8Z"/></svg></button>
-    <button class="product-share-button" data-share-product="${escapeHTML(product.id)}" type="button" aria-label="${escapeHTML(tr('ნამუშევრის გაზიარება'))}" title="${escapeHTML(tr('ნამუშევრის გაზიარება'))}"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 16V4m0 0L7.5 8.5M12 4l4.5 4.5M5 13v6h14v-6"/></svg></button>
     <div class="product-info"><div class="product-title-row"><div><span class="product-brand">${escapeHTML(product.brand)}</span><h3><button type="button" data-view="${escapeHTML(product.id)}">${escapeHTML(productName(product))}</button></h3></div><strong class="product-price">${money(product.price)}</strong></div>
-    <div class="product-meta"><span>${escapeHTML(cityLabel(product.city))}</span></div><div class="seller-line"><span class="seller-dot ${product.sellerType === 'business' ? 'seller-verified' : ''}"></span><button type="button" class="seller-name" data-seller="${escapeHTML(product.sellerId || '')}" data-product-id="${escapeHTML(product.id)}">${escapeHTML(product.seller || product.brand || tr('ავტორი'))}</button><span class="seller-status">${escapeHTML(sellerLabel(product))}</span></div>
-    <button class="add-to-cart" type="button" data-add-cart="${escapeHTML(product.id)}">${escapeHTML(tr('კალათაში დამატება'))} <span>＋</span></button><button class="boost-link" type="button" data-boost="${escapeHTML(product.id)}">${escapeHTML(tr('VIP დაწინაურება'))} <span>${arrowIcon}</span></button></div></article>`;
+    <div class="product-meta"><span>${escapeHTML(cityLabel(product.city))}</span></div>${productRatingMarkup(product)}<div class="seller-line"><span class="seller-dot ${product.sellerType === 'business' ? 'seller-verified' : ''}"></span><button type="button" class="seller-name" data-seller="${escapeHTML(product.sellerId || '')}" data-product-id="${escapeHTML(product.id)}">${escapeHTML(product.seller || product.brand || tr('ავტორი'))}</button><span class="seller-status">${escapeHTML(sellerLabel(product))}</span></div>
+    <div class="product-card-actions"><button class="add-to-cart" type="button" data-add-cart="${escapeHTML(product.id)}">${escapeHTML(tr('კალათაში დამატება'))} <span>＋</span></button>${shareButtonMarkup(product.id, 'card')}</div><button class="boost-link" type="button" data-boost="${escapeHTML(product.id)}">${escapeHTML(tr('VIP დაწინაურება'))} <span>${arrowIcon}</span></button></div></article>`;
 }
 function renderProducts() {
   const grid = document.getElementById('product-grid');
   if (!grid) return;
-  let filtered = allProducts.filter(product => product.id !== undefined && String(product.name || '').trim() && Number.isFinite(Number(product.price)) && Number(product.price) > 0 && (product.approvalStatus === 'Approved' || (product.approvalStatus === 'Pending' && product.locallyVisible === true)) && product.itemStatus !== 'Sold').filter(product => {
+  const publicProducts = allProducts.filter(product => product.approvalStatus === 'Approved' && product.itemStatus !== 'Sold');
+  let filtered = publicProducts.filter(product => product.id !== undefined && String(product.name || '').trim() && Number.isFinite(Number(product.price)) && Number(product.price) > 0).filter(product => {
     const category = categoryForProduct(product);
     const haystack = `${productName(product)} ${product.name} ${product.brand} ${product.seller || ''} ${(product.tags || []).join(' ')} ${tr(category)} ${cityLabel(product.city)}`.toLocaleLowerCase(state.language);
     return (state.category === 'ყველა' || category === state.category || (state.category === 'ლოკალური ბრენდები' && (product.localBrand === true || product.sellerType === 'business'))) &&
@@ -936,7 +1027,7 @@ function renderProducts() {
   });
   document.getElementById('results-count').textContent = `${filtered.length} ${tr(filtered.length === 1 ? 'ნამუშევარი' : 'ნამუშევრები')}`;
   const emptyState = document.getElementById('empty-state');
-  const noListings = allProducts.length === 0;
+  const noListings = publicProducts.length === 0;
   emptyState.hidden = filtered.length > 0;
   if (filtered.length === 0) {
     document.getElementById('empty-title').textContent = tr(noListings ? 'ჯერ ნამუშევრები არ დამატებულა' : 'ასეთი ნივთი ჯერ ვერ ვიპოვეთ');
@@ -945,21 +1036,20 @@ function renderProducts() {
     document.getElementById('reset-filters').hidden = noListings;
   }
   const allCount = document.getElementById('all-count');
-  if (allCount) allCount.textContent = allProducts.length;
+  if (allCount) allCount.textContent = publicProducts.length;
   const catalogCount = document.getElementById('catalog-count');
-  if (catalogCount) catalogCount.textContent = `${allProducts.length} / ${allProducts.length}`;
+  if (catalogCount) catalogCount.textContent = `${publicProducts.length} / ${publicProducts.length}`;
   const heroCount = document.getElementById('hero-product-count');
-  if (heroCount) heroCount.textContent = allProducts.length;
+  if (heroCount) heroCount.textContent = publicProducts.length;
   const heroArtistCount = document.getElementById('hero-artist-count');
   if (heroArtistCount) {
-    const activeArtists = new Set(allProducts
-      .filter(product => (product.approvalStatus === 'Approved' || (product.approvalStatus === 'Pending' && product.locallyVisible === true)) && product.itemStatus !== 'Sold')
+    const activeArtists = new Set(publicProducts
       .map(product => String(product.sellerId || product.seller || product.brand || '').trim().toLocaleLowerCase())
       .filter(Boolean));
     heroArtistCount.textContent = `${String(activeArtists.size).padStart(2, '0')}+`;
   }
   const activeStatus = document.getElementById('active-status');
-  if (activeStatus) activeStatus.textContent = allProducts.length ? tr('აქტიური განცხადებები') : tr('განცხადებები არ არის');
+  if (activeStatus) activeStatus.textContent = publicProducts.length ? tr('აქტიური განცხადებები') : tr('განცხადებები არ არის');
   document.querySelectorAll('.category-chip').forEach(button => {
     const selected = button.dataset.category === state.category;
     button.classList.toggle('selected', selected);
@@ -989,7 +1079,7 @@ function renderTrending() {
 function renderPremium() {
   const carousel = document.getElementById('premium-carousel');
   if (!carousel) return;
-  const items = allProducts.filter(product => product.promotion === 'premium');
+  const items = allProducts.filter(product => product.promotion === 'premium' && product.approvalStatus === 'Approved' && product.itemStatus !== 'Sold');
   const controls = document.querySelector('.carousel-controls');
   if (controls) controls.hidden = items.length < 2;
   if (!items.length) { carousel.innerHTML = `<div class="premium-empty"><span>${sparkleIcon}</span><p>${escapeHTML(tr('PREMIUM განცხადებები ჯერ არ არის'))}</p><a class="text-link" href="contact/index.html">${escapeHTML(tr('შენი ნივთის დამატება'))} ${arrowIcon}</a></div>`; return; }
@@ -1068,6 +1158,7 @@ function closeModal() {
   modalRoot.innerHTML = '';
   document.body.classList.remove('modal-open');
   adminUnlocked = false;
+  activeChatContext = null;
   activePayment = null;
   checkoutQueue = [];
   checkoutBuyer = null;
@@ -1113,7 +1204,7 @@ function adminPanel() {
     return `<article class="admin-payment-row"><div><strong>${escapeHTML(request.orderId)}</strong><small>${escapeHTML(request.email || '')} · ${escapeHTML(tr(request.type === 'order' ? 'მომხმარებლის შეკვეთა' : request.type === 'topup' ? 'თანხის შევსება' : request.type === 'package' ? 'პაკეტის შეძენა' : 'განცხადების დაწინაურება'))}</small><small>${escapeHTML(String(details))} · ${escapeHTML(request.recipientIban)}</small>${buyerInfo}<small>${escapeHTML(new Date(request.date).toLocaleString())} · ${escapeHTML(tr(request.status === 'approved' ? 'დადასტურებულია' : request.status === 'rejected' ? 'უარყოფილია' : 'მოლოდინშია'))}</small>${receiptUrl ? `<a href="${escapeHTML(receiptUrl)}" target="_blank" rel="noreferrer"><img class="admin-receipt" src="${escapeHTML(receiptUrl)}" alt="${escapeHTML(tr('ქვითრის ნახვა'))}"></a>` : `<small>${escapeHTML(tr('ქვითარი ვერ მოიძებნა'))}</small>`}</div><span>${money(request.amount)}</span><div class="admin-payment-actions">${actions}</div></article>`;
   }).join('');
   const tickerForm = `<h3>${escapeHTML(tr('პարამეტრები'))}</h3><form id="admin-settings-form" class="admin-settings-form"><label class="field-label">Commission Rate (%)<input name="commissionRate" type="number" min="0" max="100" step="0.01" value="${commissionRate.toFixed(2)}" required></label><p class="demo-note">Local demo only: production settings must be saved and authorized on the server.</p><p class="modal-lead">${escapeHTML(tr('სიახლეების ზოლის ტექსტი'))}</p>${[['ka', 'ქართული'], ['en', 'ინგლისური'], ['ru', 'რუსული']].map(([language, label]) => `<label class="field-label">${escapeHTML(tr(label))}<textarea name="ticker-${language}" rows="3">${escapeHTML((Array.isArray(tickerOverrides?.[language]) && tickerOverrides[language].length ? tickerOverrides[language] : translations[language].ticker).join('\n'))}</textarea></label>`).join('')}<button class="button button-primary" type="submit">${escapeHTML(tr('შენახვა'))}</button></form>`;
-  const adminStats = `<div class="admin-overview"><p class="modal-lead">${escapeHTML(tr('პლატფორმის შემოსავალი'))} <strong>${money(platformRevenue())}</strong></p><p class="modal-lead">${escapeHTML(tr('დეპოზიტები'))} <strong>${money(transactions.filter(item => item.type === 'topup').reduce((sum, item) => sum + item.amount, 0))}</strong></p><p class="modal-lead">${escapeHTML(tr('აქტიური განცხადებები'))} <strong>${allProducts.length}</strong></p><p class="modal-lead">${escapeHTML(tr('მომხმარებლები'))} <strong>${users.length}</strong></p><p class="modal-lead">${escapeHTML(tr('მაღაზიები'))} <strong>${users.filter(user => user.role === 'business').length}</strong></p></div>`;
+  const adminStats = `<div class="admin-overview"><p class="modal-lead">${escapeHTML(tr('პლატფორმის შემოსავალი'))} <strong>${money(platformRevenue())}</strong></p><p class="modal-lead">${escapeHTML(tr('დეპოზიტები'))} <strong>${money(transactions.filter(item => item.type === 'topup').reduce((sum, item) => sum + item.amount, 0))}</strong></p><p class="modal-lead">${escapeHTML(tr('აქტიური განცხადებები'))} <strong>${allProducts.filter(product => product.approvalStatus === 'Approved' && product.itemStatus !== 'Sold').length}</strong></p><p class="modal-lead">${escapeHTML(tr('მომხმარებლები'))} <strong>${users.length}</strong></p><p class="modal-lead">${escapeHTML(tr('მაღაზიები'))} <strong>${users.filter(user => user.role === 'business').length}</strong></p></div>`;
   const pendingCount = allProducts.filter(product => product.approvalStatus === 'Pending').length;
   openModal(tr('ადმინ პორტალი'), `<h3>${escapeHTML(tr('სტატისტიკა'))}</h3>${adminStats}<p class="demo-note">${escapeHTML(tr('გადახდის დამუშავება და ადმინის უფლებები ამ დემო ვერსიაში სერვერზე დაცული არ არის.'))}</p><h3>${escapeHTML(tr('ყველა მომხმარებელი და მაღაზია'))} · ${users.length}</h3><div class="admin-users">${userRows || `<p class="modal-lead">${escapeHTML(tr('მომხმარებლები ჯერ არ არის.'))}</p>`}</div><h3>${escapeHTML(tr('გატანის მოთხოვნები'))}</h3><div class="admin-users">${payoutRows || `<p class="modal-lead">${escapeHTML(tr('მოლოდინში მოთხოვნები არ არის.'))}</p>`}</div><h3>${escapeHTML(tr('გადასახდელი შეკვეთები და ქვითრები'))} · ${paymentRequests.filter(request => request.status === 'pending').length}</h3><div class="admin-payments">${paymentRows || `<p class="modal-lead">${escapeHTML(tr('მოლოდინში მოთხოვნები არ არის.'))}</p>`}</div><h3>მოთხოვნილი ნამუშევრები · ${pendingCount}</h3><div class="admin-listings">${rows || `<p class="modal-lead">${escapeHTML(tr('ჯერ განცხადებები არ დამატებულა'))}</p>`}</div>${tickerForm}`);
 }
@@ -1269,8 +1360,16 @@ document.addEventListener('submit', async event => {
       showToast('საკომისიო უნდა იყოს 0-დან 100%-მდე.');
       return;
     }
-    commissionRate = nextCommissionRate;
-    storage.write('dz-commission-rate', commissionRate);
+    if (firebaseApi) {
+      try {
+        await firebaseApi.saveCommissionRate(nextCommissionRate);
+      } catch (error) {
+        console.error('Unable to save the shared commission rate.', error);
+        showToast(error.message || 'საკომისიოს Firebase-ში შენახვა ვერ მოხერხდა.');
+        return;
+      }
+    }
+    applyCommissionRate(nextCommissionRate);
     tickerOverrides = Object.fromEntries(['ka', 'en', 'ru'].map(language => {
       const messages = String(data.get(`ticker-${language}`) || '').split(/\r?\n/).map(message => message.trim()).filter(Boolean).slice(0, 8);
       return [language, messages.length ? messages : translations[language].ticker];
@@ -1315,42 +1414,238 @@ function buyPackage(kind) {
 function showQuickView(id) {
   const product = allProducts.find(item => String(item.id) === String(id));
   if (!product) return;
+  if (product.approvalStatus !== 'Approved' || product.itemStatus === 'Sold') {
+    showToast('ეს ნამუშევარი ამჟამად ხელმისაწვდომი არ არის.');
+    return;
+  }
   const seller = users.find(user => user.email === product.sellerId);
   const socials = seller?.socials || product.socials || {};
   const sellerSocials = `<div class="seller-socials">${Object.entries(socials).filter(([key, value]) => ['instagram','tiktok','facebook','whatsapp','website'].includes(key) && safeLink(value)).map(([key, value]) => `<a href="${escapeHTML(safeLink(value))}" target="_blank" rel="noreferrer">${escapeHTML(key)} ↗</a>`).join('')}${product.address ? `<span>${escapeHTML(product.address)}</span>` : ''}${socials.email ? `<a href="mailto:${escapeHTML(socials.email)}">${escapeHTML(tr('ელ. ფოსტა'))} ↗</a>` : ''}${socials.phone ? `<a href="tel:${escapeHTML(socials.phone)}">${escapeHTML(tr('ტელეფონი'))} ↗</a>` : ''}</div>`;
   const media = product.mediaType === 'video'
     ? `<video src="${escapeHTML(product.mediaUrl || product.image)}" controls playsinline></video>`
     : `<img src="${escapeHTML(product.image)}" alt="${escapeHTML(productName(product))}">`;
-  openModal(tr('ნივთის დეტალები'), `<div class="quick-view">${media}<div><span class="product-brand">${escapeHTML(product.brand)} / ${escapeHTML(tr(product.category))}</span><h3>${escapeHTML(productName(product))}</h3><strong class="quick-price">${money(product.price)}</strong><p>${escapeHTML(productDescription(product))}</p><div class="quick-facts"><span>${escapeHTML(tr('ქალაქი'))} <b>${escapeHTML(cityLabel(product.city))}</b></span></div><div class="seller-line"><span class="seller-dot ${product.sellerType === 'business' ? 'seller-verified' : ''}"></span><button type="button" class="seller-name" data-seller="${escapeHTML(product.sellerId || '')}" data-product-id="${escapeHTML(product.id)}">${escapeHTML(product.seller || product.brand || tr('ავტორი'))}</button><span class="seller-status">${escapeHTML(sellerLabel(product))}</span></div>${sellerSocials}<div class="quick-actions"><button class="button button-primary" type="button" data-add-cart="${escapeHTML(product.id)}">${escapeHTML(tr('კალათაში დამატება'))} <span>＋</span></button><button class="button button-secondary" type="button" data-bargain="${escapeHTML(product.id)}">${escapeHTML(tr('ფასზე შევაჭრება'))}</button><button class="button button-secondary" type="button" data-custom-request="${escapeHTML(product.id)}">${escapeHTML(tr('ინდივიდუალური შეკვეთა'))}</button><button class="button button-secondary" type="button" data-share-product="${escapeHTML(product.id)}">Share</button><button class="button button-secondary" type="button" data-report-type="product" data-report-id="${escapeHTML(product.id)}">რეპორტი</button>${product.sellerUid ? `<button class="button button-secondary" type="button" data-report-type="user" data-report-id="${escapeHTML(product.sellerUid)}">გამყიდველის რეპორტი</button>` : ''}</div><section class="review-section"><h4>შეფასებები</h4><div id="product-reviews" class="review-list"><p class="demo-note">შეფასებები იტვირთება…</p></div><form id="review-form" data-product-id="${escapeHTML(product.id)}" class="review-form"><label class="field-label">შეფასება<select name="rating" required><option value="5">5 — შესანიშნავი</option><option value="4">4</option><option value="3">3</option><option value="2">2</option><option value="1">1</option></select></label><label class="field-label">შენი შეფასება<textarea name="text" rows="3" maxlength="1200" required></textarea></label><button class="button button-primary" type="submit">შეფასების გაგზავნა</button></form></section></div></div>`);
+  const ratingOptions = [1, 2, 3, 4, 5].map(value => `<label class="rating-choice"><input type="radio" name="rating" value="${value}" aria-label="${value} ვარსკვლავი" required><span aria-hidden="true">★</span></label>`).join('');
+  openModal(tr('ნივთის დეტალები'), `<div class="quick-view">${media}<div><span class="product-brand">${escapeHTML(product.brand)} / ${escapeHTML(tr(product.category))}</span><h3>${escapeHTML(productName(product))}</h3><strong class="quick-price">${money(product.price)}</strong><p>${escapeHTML(productDescription(product))}</p><div class="quick-facts"><span>${escapeHTML(tr('ქალაქი'))} <b>${escapeHTML(cityLabel(product.city))}</b></span></div><div class="seller-line"><span class="seller-dot ${product.sellerType === 'business' ? 'seller-verified' : ''}"></span><button type="button" class="seller-name" data-seller="${escapeHTML(product.sellerId || '')}" data-product-id="${escapeHTML(product.id)}">${escapeHTML(product.seller || product.brand || tr('ავტორი'))}</button><span class="seller-status">${escapeHTML(sellerLabel(product))}</span></div>${sellerSocials}<div class="quick-actions"><button class="button button-primary" type="button" data-add-cart="${escapeHTML(product.id)}">${escapeHTML(tr('კალათაში დამატება'))} <span>＋</span></button><button class="button button-secondary" type="button" data-bargain="${escapeHTML(product.id)}">${escapeHTML(tr('ფასზე შევაჭრება'))}</button><button class="button button-secondary" type="button" data-custom-request="${escapeHTML(product.id)}">${escapeHTML(tr('ინდივიდუალური შეკვეთა'))}</button><button class="button button-secondary" type="button" data-report-type="product" data-report-id="${escapeHTML(product.id)}">რეპორტი</button>${product.sellerUid ? `<button class="button button-secondary" type="button" data-report-type="user" data-report-id="${escapeHTML(product.sellerUid)}">გამყიდველის რეპორტი</button>` : ''}</div><section class="review-section"><h4>შეფასებები</h4><div id="product-rating-summary" class="review-summary"></div><div id="product-review-entries" class="review-list"><p class="demo-note">შეფასებები იტვირთება…</p></div><form id="review-form" data-product-id="${escapeHTML(product.id)}" class="review-form"><fieldset class="rating-picker" data-rating-picker><legend>შეფასება</legend><div class="rating-choices">${ratingOptions}</div><output class="rating-selection" data-rating-selection>აირჩიე 1–5 ვარსკვლავი</output></fieldset><label class="field-label">შენი შეფასება<textarea name="text" rows="3" maxlength="1200" required></textarea></label><button class="button button-primary" type="submit">შეფასების გაგზავნა</button></form></section></div></div>`);
   const chatButton = document.createElement('button');
   chatButton.className = 'button button-secondary';
   chatButton.type = 'button';
   chatButton.dataset.chatProduct = String(product.id);
   chatButton.textContent = tr('მიწერე ავტორს');
   modalRoot.querySelector('.quick-actions')?.append(chatButton);
+  modalRoot.querySelector('.quick-actions')?.insertAdjacentHTML('beforeend', shareButtonMarkup(product.id, 'detail'));
+  activeProductReviews = [];
   if (firebaseApi) {
-    productReviewsUnsubscribe = firebaseApi.subscribeProductReviews(product.id, reviews => {
-      const root = modalRoot.querySelector('#product-reviews');
-      if (!root) return;
-      root.innerHTML = reviews.length ? reviews.map(review => `<article class="review-item"><strong>${Math.min(5, Math.max(0, Number(review.rating) || 0))} / 5</strong><p>${escapeHTML(review.text)}</p></article>`).join('') : '<p class="demo-note">შეფასებები ჯერ არ არის.</p>';
-    }, error => {
+    try {
+      productReviewsUnsubscribe = firebaseApi.subscribeProductReviews(product.id, reviews => {
+        renderProductReviews(product, reviews);
+      }, error => {
+        console.error('Unable to subscribe to product reviews.', error);
+        const root = modalRoot.querySelector('#product-review-entries');
+        if (root) root.innerHTML = `<p class="demo-note">${escapeHTML(error.message || 'შეფასებების ჩატვირთვა ვერ მოხერხდა.')}</p>`;
+      });
+    } catch (error) {
       console.error('Unable to subscribe to product reviews.', error);
-    });
+      const root = modalRoot.querySelector('#product-review-entries');
+      if (root) root.innerHTML = `<p class="demo-note">${escapeHTML(error.message || 'შეფასებების ჩატვირთვა ვერ მოხერხდა.')}</p>`;
+    }
   } else {
-    const root = modalRoot.querySelector('#product-reviews');
-    if (root) root.innerHTML = '<p class="demo-note">შეფასებებისთვის საჭიროა Firebase-ის კონფიგურაცია.</p>';
+    renderProductReviews(product, getLocalProductReviews(product.id));
+    productReviewsUnsubscribe = subscribeLocalProductReviews(product.id, reviews => {
+      renderProductReviews(product, reviews);
+    });
   }
 }
+function reviewDateLabel(value) {
+  const date = typeof value?.toDate === 'function' ? value.toDate() : new Date(value);
+  return Number.isNaN(date.getTime()) ? '' : date.toLocaleDateString(state.language === 'ka' ? 'ka-GE' : state.language === 'ru' ? 'ru-RU' : 'en-US');
+}
+function renderProductReviews(product, reviews) {
+  activeProductReviews = [...reviews];
+  const summary = reviewSummary(activeProductReviews);
+  product.ratingAverage = summary.average;
+  product.ratingCount = summary.count;
+  const summaryRoot = modalRoot.querySelector('#product-rating-summary');
+  const entriesRoot = modalRoot.querySelector('#product-review-entries');
+  if (summaryRoot) {
+    summaryRoot.innerHTML = `${ratingStarsMarkup(summary.average)}<strong>${summary.average.toFixed(1)} / 5</strong><span>${summary.count} შეფასება</span>`;
+  }
+  if (entriesRoot) {
+    entriesRoot.innerHTML = activeProductReviews.length ? activeProductReviews.map(review => {
+      const rating = Math.max(0, Math.min(5, Number(review.rating) || 0));
+      const date = reviewDateLabel(review.createdAt);
+      return `<article class="review-item"><div class="review-item-heading">${ratingStarsMarkup(rating)}<strong>${rating} / 5</strong>${date ? `<time>${escapeHTML(date)}</time>` : ''}</div><p>${escapeHTML(review.text)}</p></article>`;
+    }).join('') : '<p class="demo-note">შეფასებები ჯერ არ არის.</p>';
+  }
+  renderProducts();
+}
+function updateRatingPicker(picker, previewRating = 0) {
+  const selected = Number(picker.querySelector('input[name="rating"]:checked')?.value || 0);
+  const displayRating = previewRating || selected;
+  picker.querySelectorAll('.rating-choice').forEach(choice => {
+    const value = Number(choice.querySelector('input')?.value || 0);
+    choice.classList.toggle('is-filled', value <= displayRating);
+  });
+  const output = picker.querySelector('[data-rating-selection]');
+  if (output) output.textContent = displayRating ? `${displayRating} / 5 ვარსკვლავი` : 'აირჩიე 1–5 ვარსკვლავი';
+}
+document.addEventListener('change', event => {
+  const picker = event.target.closest('[data-rating-picker]');
+  if (picker) updateRatingPicker(picker);
+});
+document.addEventListener('pointerover', event => {
+  const choice = event.target.closest('.rating-choice');
+  if (!choice) return;
+  const picker = choice.closest('[data-rating-picker]');
+  if (picker) updateRatingPicker(picker, Number(choice.querySelector('input')?.value || 0));
+});
+document.addEventListener('pointerout', event => {
+  const picker = event.target.closest('[data-rating-picker]');
+  if (picker && !picker.contains(event.relatedTarget)) updateRatingPicker(picker);
+});
 function chatTimeLabel(value) {
   const date = typeof value?.toDate === 'function' ? value.toDate() : new Date(value);
   return Number.isNaN(date.getTime()) ? '' : date.toLocaleTimeString(state.language === 'ka' ? 'ka-GE' : state.language === 'ru' ? 'ru-RU' : 'en-US', { hour: '2-digit', minute: '2-digit' });
 }
-function renderChatMessages(messages, chatId, requestToken) {
+function localChatThreads() {
+  const threads = storage.read('dz-product-chats', []);
+  return Array.isArray(threads) ? threads : [];
+}
+function saveLocalChatThreads(threads) {
+  storage.write('dz-product-chats', threads);
+}
+function localChatId(productId, sellerId) {
+  return `local-${encodeURIComponent(String(productId))}-${encodeURIComponent(String(sellerId).toLowerCase())}`;
+}
+function subscribeLocalChatMessages(chatId, onChange) {
+  const update = () => {
+    const thread = localChatThreads().find(item => item.id === chatId);
+    onChange(thread?.messages || []);
+  };
+  const onStorage = event => {
+    if (event.key === 'dz-product-chats') update();
+  };
+  window.addEventListener('storage', onStorage);
+  update();
+  return () => window.removeEventListener('storage', onStorage);
+}
+function subscribeLocalChatThreads(onChange) {
+  const update = () => onChange(localChatThreads().sort((left, right) => new Date(right.updatedAt || 0) - new Date(left.updatedAt || 0)));
+  const onStorage = event => {
+    if (event.key === 'dz-product-chats') update();
+  };
+  window.addEventListener('storage', onStorage);
+  update();
+  return () => window.removeEventListener('storage', onStorage);
+}
+function subscribeLocalProductReviews(productId, onChange) {
+  const onStorage = event => {
+    if (event.key !== 'dz-product-reviews') return;
+    const reviews = storage.read('dz-product-reviews', []);
+    savedProductReviews = Array.isArray(reviews) ? reviews : [];
+    onChange(getLocalProductReviews(productId));
+  };
+  window.addEventListener('storage', onStorage);
+  return () => window.removeEventListener('storage', onStorage);
+}
+function renderChatInbox(chats, currentId) {
+  const root = modalRoot.querySelector('#chat-inbox-list');
+  if (!root) return;
+  const filtered = chats.filter(chat => (chat.participants || []).includes(currentId));
+  root.innerHTML = filtered.length ? filtered.map(chat => {
+    const product = allProducts.find(item => String(item.id) === String(chat.productId));
+    const name = product ? productName(product) : chat.productName || 'ნამუშევარი';
+    const id = chat.id || chat.chatId;
+    return `<button type="button" class="chat-inbox-item" data-chat-thread="${escapeHTML(id)}"><strong>${escapeHTML(name)}</strong><span>${escapeHTML(chat.lastMessage || 'საუბრის დაწყება')}</span><time>${escapeHTML(chatTimeLabel(chat.updatedAt || chat.createdAt))}</time></button>`;
+  }).join('') : `<p class="chat-empty">${escapeHTML(tr('ჯერ შეტყობინებები არ არის.'))}</p>`;
+}
+function openChatInbox() {
+  const user = firebaseApi?.getCurrentUser() || (!firebaseApi ? currentUser() : null);
+  const currentId = firebaseApi ? user?.uid : String(user?.email || '').trim().toLowerCase();
+  if (!user || !currentId) {
+    authModal('login');
+    showToast('შეტყობინებების სანახავად ანგარიშში შესვლაა საჭირო.');
+    return;
+  }
+  openModal('ჩემი შეტყობინებები', '<div class="chat-inbox" id="chat-inbox-list"><p class="chat-empty">ჩატები იტვირთება…</p></div>', 'chat-modal');
+  if (firebaseApi) {
+    try {
+      chatMessagesUnsubscribe = firebaseApi.subscribeUserChats(chats => renderChatInbox(chats, currentId), error => {
+        console.error('Unable to load message inbox.', error);
+        const root = modalRoot.querySelector('#chat-inbox-list');
+        if (root) root.innerHTML = `<p class="chat-status">${escapeHTML(error.message || 'შეტყობინებების ჩატვირთვა ვერ მოხერხდა.')}</p>`;
+      });
+    } catch (error) {
+      console.error('Unable to load message inbox.', error);
+      const root = modalRoot.querySelector('#chat-inbox-list');
+      if (root) root.innerHTML = `<p class="chat-status">${escapeHTML(error.message || 'შეტყობინებების ჩატვირთვა ვერ მოხერხდა.')}</p>`;
+    }
+    return;
+  }
+  chatMessagesUnsubscribe = subscribeLocalChatThreads(chats => renderChatInbox(chats, currentId));
+}
+async function openChatThread(chatId) {
+  const user = firebaseApi?.getCurrentUser() || (!firebaseApi ? currentUser() : null);
+  if (!user) {
+    authModal('login');
+    return;
+  }
+  try {
+    const chat = firebaseApi
+      ? await firebaseApi.getChat(chatId)
+      : localChatThreads().find(thread => thread.id === chatId);
+    if (!chat) throw new Error('ჩატი ვერ მოიძებნა.');
+    const currentId = firebaseApi ? user.uid : String(user.email || '').trim().toLowerCase();
+    if (!firebaseApi && !(chat.participants || []).includes(currentId)) {
+      throw new Error('ამ ჩატზე წვდომა არ გაქვს.');
+    }
+    const product = allProducts.find(item => String(item.id) === String(chat.productId)) || {
+      id: chat.productId,
+      name: chat.productName || 'ნამუშევარი',
+      sellerId: chat.sellerId || '',
+      sellerUid: chat.sellerUid || '',
+      seller: chat.sellerName || 'ავტორი'
+    };
+    showChatConversation(product, chat, user);
+  } catch (error) {
+    console.error('Unable to open chat thread.', error);
+    showToast(error.message || 'ჩატის გახსნა ვერ მოხერხდა.');
+  }
+}
+function showChatConversation(product, chat, user) {
+  const chatId = chat.id || chat.chatId;
+  const currentUserId = firebaseApi ? user.uid : String(user.email || '').trim().toLowerCase();
+  const sellerId = String(firebaseApi
+    ? (chat.sellerUid || product.sellerUid || chat.sellerId || product.sellerId)
+    : (chat.sellerId || product.sellerId || chat.sellerUid || product.sellerUid) || '').trim();
+  const isSeller = firebaseApi
+    ? currentUserId === sellerId
+    : currentUserId.toLowerCase() === sellerId.toLowerCase();
+  activeChatContext = { currentUserId, isSeller, local: !firebaseApi };
+  const body = `<div class="chat-panel"><button type="button" class="chat-back" data-chat-inbox>← ჩემი შეტყობინებები</button><p class="chat-product-name">${escapeHTML(productName(product))}</p><div class="chat-messages" id="chat-messages" role="log" aria-live="polite"><p class="chat-empty">${escapeHTML(tr('ჩატის ჩატვირთვა…'))}</p></div><p class="chat-status" id="chat-status" role="status"></p><form class="chat-compose" id="chat-form" data-chat-id="${escapeHTML(chatId)}"><textarea name="message" rows="2" maxlength="2000" placeholder="${escapeHTML(tr('შეტყობინება'))}" aria-label="${escapeHTML(tr('შეტყობინება'))}" required></textarea><button class="button button-primary" type="submit">${escapeHTML(tr('შეტყობინების გაგზავნა'))} <span>↗</span></button></form></div>`;
+  openModal(tr('მიწერე ავტორს'), body, 'chat-modal');
+  const requestToken = chatRequestToken;
+  const onMessages = messages => renderChatMessages(messages, chatId, requestToken, activeChatContext);
+  if (firebaseApi) {
+    chatMessagesUnsubscribe = firebaseApi.subscribeChatMessages(chatId, onMessages, error => {
+      console.error('Unable to load real-time chat messages.', error);
+      const status = modalRoot.querySelector('#chat-status');
+      if (status && requestToken === chatRequestToken) status.textContent = error.message || 'შეტყობინებების ჩატვირთვა ვერ მოხერხდა.';
+    });
+  } else {
+    chatMessagesUnsubscribe = subscribeLocalChatMessages(chatId, onMessages);
+  }
+}
+function renderChatMessages(messages, chatId, requestToken, context) {
   const root = modalRoot.querySelector('#chat-messages');
   if (!root || requestToken !== chatRequestToken) return;
-  const currentUserId = firebaseApi?.getCurrentUser()?.uid;
-  root.innerHTML = messages.length ? messages.map(message => `<article class="chat-message ${message.senderId === currentUserId ? 'chat-message--own' : ''}"><p>${escapeHTML(message.text)}</p><time>${escapeHTML(chatTimeLabel(message.timestamp))}</time></article>`).join('') : `<p class="chat-empty">${escapeHTML(tr('ჯერ შეტყობინებები არ არის. დაიწყე საუბარი.'))}</p>`;
+  const currentUserId = context?.currentUserId;
+  root.innerHTML = messages.length ? messages.map(message => {
+    const own = message.senderId === currentUserId;
+    const sender = own ? tr('შენ') : message.senderName || tr(context?.isSeller ? 'მყიდველი' : 'გამყიდველი');
+    return `<article class="chat-message ${own ? 'chat-message--own' : ''}"><strong>${escapeHTML(sender)}</strong><p>${escapeHTML(message.text)}</p><time>${escapeHTML(chatTimeLabel(message.timestamp))}</time></article>`;
+  }).join('') : `<p class="chat-empty">${escapeHTML(tr('ჯერ შეტყობინებები არ არის. დაიწყე საუბარი.'))}</p>`;
   root.scrollTop = root.scrollHeight;
+  if (!firebaseApi) return;
   const unreadIds = messages.filter(message => message.senderId !== currentUserId && !message.read).map(message => message.id);
   if (unreadIds.length) {
     firebaseApi.markChatMessagesRead(chatId, unreadIds).catch(error => {
@@ -1366,36 +1661,71 @@ function openChatForProduct(productId) {
     showToast('ნამუშევარი ვერ მოიძებნა.');
     return;
   }
-  const user = firebaseApi?.getCurrentUser();
+  const user = firebaseApi?.getCurrentUser() || (!firebaseApi ? currentUser() : null);
   if (!user) {
     authModal('login');
     showToast('ჩატისთვის ანგარიშში შესვლა საჭიროა.');
     return;
   }
-  if (product.sellerUid && product.sellerUid === user.uid) {
-    showToast('საკუთარ განცხადებაზე შეტყობინებას ვერ გაგზავნი.');
+  const currentId = firebaseApi ? user.uid : String(user.email || '').trim().toLowerCase();
+  const sellerId = String(firebaseApi ? (product.sellerUid || product.sellerId) : (product.sellerId || product.sellerUid) || '').trim();
+  const isSeller = firebaseApi ? currentId === sellerId : currentId.toLowerCase() === sellerId.toLowerCase();
+  if (isSeller) {
+    openChatInbox();
     return;
   }
-  const body = `<div class="chat-panel"><p class="chat-product-name">${escapeHTML(productName(product))}</p><div class="chat-messages" id="chat-messages" role="log" aria-live="polite"><p class="chat-empty">${escapeHTML(tr('ჩატის ჩატვირთვა…'))}</p></div><p class="chat-status" id="chat-status" role="status"></p><form class="chat-compose" id="chat-form"><textarea name="message" rows="2" maxlength="2000" placeholder="${escapeHTML(tr('შეტყობინება'))}" aria-label="${escapeHTML(tr('შეტყობინება'))}" required></textarea><button class="button button-primary" type="submit">${escapeHTML(tr('შეტყობინების გაგზავნა'))} <span>↗</span></button></form></div>`;
-  openModal(tr('მიწერე ავტორს'), body, 'chat-modal');
-  const requestToken = chatRequestToken;
-  firebaseApi.openChat(product.id).then(chat => {
-    const form = modalRoot.querySelector('#chat-form');
-    if (!form || requestToken !== chatRequestToken) return;
-    form.dataset.chatId = chat.chatId;
-    form.elements.message.focus();
-    chatMessagesUnsubscribe = firebaseApi.subscribeChatMessages(chat.chatId, messages => {
-      renderChatMessages(messages, chat.chatId, requestToken);
-    }, error => {
-      console.error('Unable to load real-time chat messages.', error);
-      const status = modalRoot.querySelector('#chat-status');
-      if (status && requestToken === chatRequestToken) status.textContent = error.message || 'შეტყობინებების ჩატვირთვა ვერ მოხერხდა.';
+  if (firebaseApi) {
+    firebaseApi.openChat(product.id).then(chat => {
+      showChatConversation(product, chat, user);
+    }).catch(error => {
+      console.error('Unable to open chat.', error);
+      showToast(error.message || 'ჩატის გახსნა ვერ მოხერხდა.');
     });
-  }).catch(error => {
-    console.error('Unable to open chat.', error);
-    const status = modalRoot.querySelector('#chat-status');
-    if (status && requestToken === chatRequestToken) status.textContent = error.message || 'ჩატის გახსნა ვერ მოხერხდა.';
-  });
+    return;
+  }
+  const id = localChatId(product.id, sellerId);
+  let threads = localChatThreads();
+  let chat = threads.find(thread => thread.id === id);
+  if (!chat) {
+    chat = {
+      id,
+      productId: String(product.id),
+      productName: productName(product),
+      sellerId,
+      sellerName: product.seller || product.brand || 'ავტორი',
+      buyerId: currentId,
+      participants: [currentId, sellerId.toLowerCase()].filter(Boolean),
+      messages: [],
+      lastMessage: '',
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString()
+    };
+    threads = [...threads, chat];
+    saveLocalChatThreads(threads);
+  }
+  showChatConversation(product, chat, user);
+}
+function sendLocalChatMessage(chatId, text, user) {
+  const message = String(text || '').trim();
+  if (!chatId || !message || message.length > 2000) throw new Error('შეტყობინება ცარიელია ან ზედმეტად გრძელია.');
+  const threads = localChatThreads();
+  const thread = threads.find(item => item.id === chatId);
+  if (!thread) throw new Error('ჩატი ვერ მოიძებნა.');
+  const senderId = String(user.email || '').trim().toLowerCase();
+  if (!thread.participants.includes(senderId)) throw new Error('ამ ჩატში შეტყობინების გაგზავნის უფლება არ გაქვს.');
+  const record = {
+    id: `local-message-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    senderId,
+    senderName: user.name || user.email || 'მომხმარებელი',
+    text: message,
+    timestamp: new Date().toISOString(),
+    read: false
+  };
+  thread.messages = [...(thread.messages || []), record].slice(-200);
+  thread.lastMessage = message;
+  thread.updatedAt = record.timestamp;
+  saveLocalChatThreads(threads);
+  return thread.messages;
 }
 document.addEventListener('submit', event => {
   if (event.target.id !== 'chat-form') return;
@@ -1404,10 +1734,16 @@ document.addEventListener('submit', event => {
   const message = String(form.elements.message.value || '').trim();
   const status = modalRoot.querySelector('#chat-status');
   const button = form.querySelector('button[type="submit"]');
-  if (!form.dataset.chatId || !message) return;
+  const user = firebaseApi?.getCurrentUser() || (!firebaseApi ? currentUser() : null);
+  if (!form.dataset.chatId || !message || !user) return;
   button.disabled = true;
   if (status) status.textContent = '';
-  firebaseApi.sendChatMessage(form.dataset.chatId, message).then(() => {
+  Promise.resolve().then(() => firebaseApi
+    ? firebaseApi.sendChatMessage(form.dataset.chatId, message)
+    : sendLocalChatMessage(form.dataset.chatId, message, user)).then(messages => {
+    if (!firebaseApi && activeChatContext) {
+      renderChatMessages(messages, form.dataset.chatId, chatRequestToken, activeChatContext);
+    }
     form.elements.message.value = '';
     form.elements.message.focus();
   }).catch(error => {
@@ -1421,13 +1757,15 @@ let sharedProductOpened = false;
 function openSharedProduct() {
   if (sharedProductOpened) return;
   const productId = new URLSearchParams(location.search).get('product');
-  if (!productId || !allProducts.some(product => String(product.id) === productId)) return;
+  if (!productId || !allProducts.some(product => String(product.id) === productId
+    && product.approvalStatus === 'Approved' && product.itemStatus !== 'Sold')) return;
   sharedProductOpened = true;
   showQuickView(productId);
 }
 function showSellerProfile(sellerId, productId) {
-  const listings = allProducts.filter(item => String(item.sellerId || '') === String(sellerId || ''));
-  const selectedProduct = allProducts.find(item => String(item.id) === String(productId));
+  const listings = allProducts.filter(item => String(item.sellerId || '') === String(sellerId || '')
+    && item.approvalStatus === 'Approved' && item.itemStatus !== 'Sold');
+  const selectedProduct = listings.find(item => String(item.id) === String(productId));
   const profile = users.find(user => user.email === sellerId);
   const featuredProduct = listings[0] || selectedProduct;
   if (!featuredProduct) return;
@@ -1519,16 +1857,22 @@ async function shareProduct(productId) {
     return;
   }
   const url = productShareUrl(product.id);
-  const encodedUrl = encodeURIComponent(url);
-  const encodedText = encodeURIComponent(productName(product));
-  const options = [
-    ['WhatsApp', `https://wa.me/?text=${encodedText}%20${encodedUrl}`],
-    ['Viber', `viber://forward?text=${encodedText}%20${encodedUrl}`],
-    ['Telegram', `https://t.me/share/url?url=${encodedUrl}&text=${encodedText}`],
-    ['Facebook / Messenger', `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`],
-    ['Mail', `mailto:?subject=${encodedText}&body=${encodedUrl}`]
-  ];
-  openModal('Share', `<p class="modal-lead">${escapeHTML(productName(product))}</p><div class="share-options">${options.map(([label, href]) => `<a href="${escapeHTML(href)}" target="_blank" rel="noopener noreferrer">${escapeHTML(label)}</a>`).join('')}<button type="button" data-share-copy="${escapeHTML(url)}">Copy link</button></div>`, 'share-modal');
+  if (navigator.share) {
+    try {
+      await navigator.share({ title: productName(product), text: productName(product), url });
+      showToast('ლინკი გასაზიარებლად მზადაა.');
+      return;
+    } catch (error) {
+      if (error.name === 'AbortError') return;
+      console.error('Native product sharing failed; copying the link instead.', error);
+    }
+  }
+  try {
+    await copyProductLink(url);
+    showToast('ლინკი დაკოპირდა.');
+  } catch (error) {
+    showToast(error.message || 'ლინკის გაზიარება ვერ მოხერხდა.');
+  }
 }
 function openNotifications() {
   const user = currentUser();
@@ -1597,6 +1941,12 @@ function authModal(mode = 'register') {
     const hasBonus = (user.bonusTier && user.bonusTier !== 'none') || Number(user.freeBoosts || 0) > 0 || Number(user.commissionDiscount || 0) > 0;
     const bonusStatus = hasBonus ? `<p class="seller-bonus-status">გამყიდველის ბონუსი: <strong>${escapeHTML(user.bonusTier || 'აქტიური')}</strong> · ${Number(user.freeBoosts || 0)} უფასო Boost · საკომისიოს შეღავათი ${Number(user.commissionDiscount || 0)}%</p>` : '';
     openModal(tr('ანგარიში'), `<p class="modal-lead"><strong>${escapeHTML(user.name)}</strong><br>${escapeHTML(accountStatus)}</p>${bonusStatus}${user.bio ? `<p class="seller-bio">${escapeHTML(user.bio)}</p>` : ''}<p class="modal-lead">გამყიდველის ხელმისაწვდომი თანხა: <strong>${money(available)}</strong></p><form id="payout-form" class="modal-form"><label class="field-label">IBAN<input name="iban" autocomplete="off" placeholder="GE00TB0000000000000000" required></label><label class="field-label">გასატანი თანხა<input name="amount" type="number" min="1" max="${available}" step="0.01" required></label><button class="button button-primary" type="submit" ${available < 1 ? 'disabled' : ''}>თანხის გატანა <span>↗</span></button></form>${user.address ? `<p class="demo-note">${escapeHTML(user.address)}</p>` : ''}<div class="social-profile">${profileSocials}${phoneLink}${emailLink}</div><button type="button" class="button button-secondary" data-logout>${escapeHTML(tr('გასვლა'))}</button>`);
+    const inboxButton = document.createElement('button');
+    inboxButton.type = 'button';
+    inboxButton.className = 'button button-secondary order-history-open';
+    inboxButton.dataset.chatInbox = '';
+    inboxButton.textContent = 'ჩემი შეტყობინებები';
+    modalRoot.querySelector('#payout-form')?.before(inboxButton);
     if (firebaseApi) {
       const ordersButton = document.createElement('button');
       ordersButton.type = 'button';
@@ -1720,7 +2070,7 @@ if (firebaseApi) {
   }, error => console.error('Firebase customer authentication state failed.', error));
   firebaseApi.subscribeProducts(remoteProducts => {
     const merged = new Map(state.userProducts
-      .filter(product => !product.firebaseManaged || (product.approvalStatus === 'Pending' && product.locallyVisible === true))
+      .filter(product => !product.firebaseManaged && product.approvalStatus === 'Approved' && product.itemStatus !== 'Sold')
       .map(product => [String(product.id), product]));
     remoteProducts.forEach(product => merged.set(String(product.id), {
       ...product,
@@ -1737,9 +2087,8 @@ if (firebaseApi) {
     openSharedProduct();
   }, error => console.error('Unable to subscribe to Firestore products.', error));
   firebaseApi.subscribeSettings(settings => {
-    if (!Number.isFinite(settings.commissionRate) || settings.commissionRate < 0 || settings.commissionRate > 100) return;
-    commissionRate = settings.commissionRate;
-    storage.write('dz-commission-rate', commissionRate);
+    if (settings.commissionRate === undefined) return;
+    applyCommissionRate(settings.commissionRate);
   }, error => console.error('Unable to subscribe to Firestore settings.', error));
   firebaseApi.subscribeSiteConfig(config => {
     siteConfigOverride = {
@@ -1771,7 +2120,10 @@ window.addEventListener('storage', event => {
   }
   if (event.key === 'dz-commission-rate') {
     const updatedRate = Number(event.newValue);
-    if (Number.isFinite(updatedRate) && updatedRate >= 0 && updatedRate <= 100) commissionRate = updatedRate;
+    if (Number.isFinite(updatedRate) && updatedRate >= 0 && updatedRate <= 100) {
+      commissionRate = updatedRate;
+      updateCommissionPreview();
+    }
   }
   if (event.key === 'dz-user-products' || event.key === 'dz_listings') {
     try {
@@ -1792,7 +2144,8 @@ window.addEventListener('storage', event => {
   }
 });
 window.setInterval(() => {
-  const premiums = allProducts.filter(product => product.promotion === 'premium');
+  const premiums = allProducts.filter(product => product.promotion === 'premium'
+    && product.approvalStatus === 'Approved' && product.itemStatus !== 'Sold');
   if (premiums.length > 1 && document.getElementById('premium-carousel')) { state.premiumIndex = (state.premiumIndex + 1) % premiums.length; renderPremium(); }
 }, 6000);
 
@@ -1932,7 +2285,8 @@ document.addEventListener('click', event => {
   if (target.dataset.boost) boostModal(target.dataset.boost);
   if (target.dataset.boostBuy) applyBoost(target.dataset.boostBuy, target.dataset.tier);
   if (target.id === 'premium-prev' || target.id === 'premium-next') {
-    const count = allProducts.filter(product => product.promotion === 'premium').length;
+    const count = allProducts.filter(product => product.promotion === 'premium'
+      && product.approvalStatus === 'Approved' && product.itemStatus !== 'Sold').length;
     if (count) { state.premiumIndex = (state.premiumIndex + (target.id === 'premium-next' ? 1 : count - 1)) % count; renderPremium(); }
   }
   if (target.id === 'cart-open') showCart();
@@ -1967,6 +2321,8 @@ document.addEventListener('click', event => {
   if (target.matches('[data-close-modal]')) closeModal();
   if (target.matches('[data-open-topup]')) balanceModal();
   if (target.dataset.buyPackage) buyPackage(target.dataset.buyPackage);
+  if (target.dataset.chatInbox !== undefined) { openChatInbox(); return; }
+  if (target.dataset.chatThread) { openChatThread(target.dataset.chatThread); return; }
   if (target.dataset.chatProduct) { openChatForProduct(target.dataset.chatProduct); return; }
   if (target.dataset.view) showQuickView(target.dataset.view);
   if (target.dataset.seller !== undefined) showSellerProfile(target.dataset.seller, target.dataset.productId);
@@ -2073,10 +2429,38 @@ document.addEventListener('submit', async event => {
   if (event.target.id === 'review-form') {
     event.preventDefault();
     const form = event.target;
-    if (!firebaseApi) { showToast('შეფასებისთვის საჭიროა Firebase-ის კონფიგურაცია.'); return; }
+    const data = new FormData(form);
+    const rating = Number(data.get('rating'));
+    const text = String(data.get('text') || '').trim();
+    if (!Number.isInteger(rating) || rating < 1 || rating > 5 || !text || text.length > 1200) {
+      showToast('შეფასება 1–5 ვარსკვლავი უნდა იყოს და კომენტარი სავალდებულოა.');
+      return;
+    }
     try {
-      await firebaseApi.createReview(form.dataset.productId, new FormData(form).get('rating'), new FormData(form).get('text'));
+      let review;
+      if (firebaseApi) {
+        review = await firebaseApi.createReview(form.dataset.productId, rating, text);
+      } else {
+        const user = currentUser();
+        review = {
+          id: `local-review-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+          productId: String(form.dataset.productId),
+          userId: String(user?.email || 'local-guest').toLowerCase(),
+          userName: user?.name || 'სტუმარი',
+          rating,
+          text,
+          createdAt: new Date().toISOString()
+        };
+        savedProductReviews = [review, ...savedProductReviews].slice(0, 5000);
+        storage.write('dz-product-reviews', savedProductReviews);
+      }
+      const product = allProducts.find(item => String(item.id) === String(form.dataset.productId));
+      if (product) {
+        renderProductReviews(product, [review, ...activeProductReviews.filter(item => item.id !== review.id)]);
+      }
       form.reset();
+      const picker = form.querySelector('[data-rating-picker]');
+      if (picker) updateRatingPicker(picker);
       showToast('შეფასება გაიგზავნა.');
     } catch (error) {
       console.error('Unable to submit product review.', error);
@@ -2234,7 +2618,13 @@ document.addEventListener('submit', async event => {
       closeModal(); showToast(tr('შესვლა წარმატებულია.'));
       return;
     }
-    const user = { ...profile, balance: state.balance, banned: false };
+    const user = {
+      ...profile,
+      id: `local-user-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      createdAt: new Date().toISOString(),
+      balance: state.balance,
+      banned: false
+    };
     users = users.filter(entry => entry.email !== user.email);
     users.push(user);
     storage.write('dz-users', users);
@@ -2322,11 +2712,23 @@ document.addEventListener('submit', async event => {
     const amount = Number(data.get('amount'));
     const iban = String(data.get('iban') || '').replace(/\s/g, '').toUpperCase();
     const available = Number(sellerBalances[user?.email] || 0);
-    if (!user || amount <= 0 || amount > available || !/^GE[0-9A-Z]{20,30}$/.test(iban)) { showToast('შეამოწმე თანხა და IBAN'); return; }
-    sellerBalances[user.email] = available - amount;
-    payoutRequests.unshift({ id: `DZ-PO-${Date.now()}`, email: user.email, iban, amount, date: new Date().toISOString(), status: 'pending' });
-    saveFinance();
-    openModal(tr('გატანის მოთხოვნა მიღებულია'), `<p class="modal-lead">${money(amount)} · ${escapeHTML(tr('მოთხოვნა გადაეგზავნა ადმინისტრატორს.'))}</p><p class="demo-note">${escapeHTML(tr('გადახდის UI მზადაა პროვაიდერთან დასაკავშირებლად. ამ ლოკალურ ვერსიაში ბარათი არ იტენება და მისი მონაცემები არ ინახება.'))}</p><button class="button button-primary" data-close-modal type="button">${escapeHTML(tr('დახურვა'))}</button>`);
+    if (!user || amount <= 0 || amount > available || !validGeorgianIban(iban)) { showToast('შეამოწმე თანხა და IBAN'); return; }
+    try {
+      if (firebaseApi) {
+        const firebaseUser = firebaseApi.getCurrentUser();
+        if (!firebaseUser || firebaseUser.email !== user.email) {
+          throw new Error('Payout-ის მოთხოვნისთვის შედი იმ Firebase ანგარიშში, რომელსაც იყენებ საიტზე.');
+        }
+        await firebaseApi.createPayoutRequest({ iban, amount });
+      }
+      sellerBalances[user.email] = available - amount;
+      payoutRequests.unshift({ id: `DZ-PO-${Date.now()}`, email: user.email, iban, amount, date: new Date().toISOString(), status: 'pending' });
+      saveFinance();
+      openModal(tr('გატანის მოთხოვნა მიღებულია'), `<p class="modal-lead">${money(amount)} · ${escapeHTML(tr('მოთხოვნა გადაეგზავნა ადმინისტრატორს.'))}</p><p class="demo-note">${escapeHTML(tr('გადახდის UI მზადაა პროვაიდერთან დასაკავშირებლად. ამ ლოკალურ ვერსიაში ბარათი არ იტენება და მისი მონაცემები არ ინახება.'))}</p><button class="button button-primary" data-close-modal type="button">${escapeHTML(tr('დახურვა'))}</button>`);
+    } catch (error) {
+      console.error('Unable to create payout request.', error);
+      showToast(error.message || 'Payout-ის მოთხოვნა ვერ შეიქმნა.');
+    }
   }
   if (event.target.id === 'listing-form') {
     event.preventDefault();
@@ -2390,7 +2792,6 @@ document.addEventListener('submit', async event => {
         return;
       }
     }
-    newProduct.locallyVisible = true;
     const nextUserProducts = [newProduct, ...state.userProducts];
     try {
       localStorage.setItem('dz-user-products', JSON.stringify(nextUserProducts));

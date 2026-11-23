@@ -243,8 +243,11 @@
   }
 
   function commissionRate() {
-    const value = Number(document.querySelector('#commission-form [name="commissionRate"]')?.value);
-    return Number.isFinite(value) && value >= 0 && value <= 100 ? value / 100 : 0;
+    const value = Number(window.DropZoneCommissionRate);
+    if (window.DropZoneCommissionRateReady !== true || !Number.isFinite(value) || value < 0 || value > 100) {
+      throw new Error('საკომისიოს პარამეტრი ჯერ არ ჩაიტვირთა ან არასწორია.');
+    }
+    return value / 100;
   }
 
   async function createTransaction(form) {

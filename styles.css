@@ -177,7 +177,7 @@ body[data-theme="light"] .sponsors-page { padding-top: 42px; padding-bottom: 86p
 .sponsor-card-footer { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-top: 12px; border-top: 1px solid var(--line); }
 .sponsor-card-footer .text-link { display: inline-flex; align-items: center; gap: 7px; color: var(--orange); }
 .sponsor-clicks { color: var(--muted); font-size: 8px; }
-.product-share-button { position: absolute; z-index: 3; top: 48px; right: 10px; width: 32px; height: 32px; display: grid; place-items: center; border: 1px solid rgba(17,17,17,.2); border-radius: 50%; background: rgba(243,238,227,.92); color: #111111; cursor: pointer; }
+.product-share-button { width: 36px; height: 36px; flex: 0 0 36px; display: grid; place-items: center; border: 1px solid var(--line); border-radius: 50%; background: var(--panel-2); color: var(--white); cursor: pointer; }
 .product-share-button svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .product-share-button:hover { color: var(--orange); border-color: var(--orange); }
 .share-modal { width: min(480px,calc(100% - 28px)); }
@@ -194,7 +194,6 @@ body[data-theme="light"] .sponsors-page { padding-top: 42px; padding-bottom: 86p
   .sponsor-card-copy h3 { font-size: 14px; }
   .sponsor-card-copy p { font-size: 9px; }
   .sponsor-card-footer { align-items: flex-start; flex-direction: column; }
-  .product-share-button { top: 43px; right: 7px; }
   .share-options { grid-template-columns: repeat(2,minmax(0,1fr)); }
 }
 .ad-slot { display: grid; grid-template-columns: repeat(auto-fit,minmax(250px,1fr)); gap: 12px; }
@@ -246,4 +245,59 @@ body { font-variant-emoji: text; }
   transform: translate3d(0, 0, 0);
   transition: width .22s ease, transform .22s ease, opacity .12s ease;
   will-change: width, transform;
+}
+.product-card-actions { display: flex; align-items: center; gap: 9px; margin-top: 9px; }
+.product-card-actions .add-to-cart { flex: 1; min-width: 0; margin-top: 0; }
+.product-share-button--card { margin-left: auto; }
+.quick-actions .product-share-button--detail { margin-left: auto; }
+.product-rating,.review-summary,.review-item-heading { display: flex; align-items: center; gap: 7px; }
+.product-rating { margin: 5px 0 2px; color: var(--muted); font-size: 8px; }
+.review-summary { flex-wrap: wrap; margin: 0 0 11px; color: var(--muted); font-size: 9px; }
+.review-summary strong,.review-item-heading strong { color: var(--white); font-size: 9px; }
+.rating-stars { display: inline-flex; gap: 1px; white-space: nowrap; }
+.rating-star { width: 15px; height: 15px; flex: 0 0 15px; display: block; overflow: visible; }
+.rating-star-empty { fill: #5f6269; }
+.rating-star-fill { fill: #f3bd4d; clip-path: inset(0 calc(100% - var(--star-fill)) 0 0); }
+.review-item-heading time { margin-left: auto; color: var(--muted); font-size: 8px; }
+.review-item p { color: var(--muted); font-size: 9px; }
+.rating-picker { min-width: 0; margin: 0; padding: 0; border: 0; }
+.rating-picker legend { margin-bottom: 5px; font-size: 9px; font-weight: 600; }
+.rating-choices { display: flex; align-items: center; gap: 5px; }
+.rating-choice { position: relative; display: inline-grid; place-items: center; cursor: pointer; }
+.rating-choice input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+.rating-choice span { color: #5f6269; font-size: 27px; line-height: 1; transition: color .12s, transform .12s; }
+.rating-choice.is-filled span,.rating-choice:hover span { color: #f3bd4d; }
+.rating-choice:hover span { transform: scale(1.13); }
+.rating-choice input:focus-visible + span { outline: 2px solid var(--orange); outline-offset: 3px; }
+.rating-selection { display: block; min-height: 18px; margin-top: 5px; color: var(--muted); font-size: 8px; }
+.chat-modal { width: min(620px, calc(100% - 28px)); }
+.chat-panel { display: grid; gap: 10px; }
+.chat-back { justify-self: start; padding: 3px 0; border: 0; background: none; color: var(--muted); font-size: 9px; cursor: pointer; }
+.chat-back:hover { color: var(--orange); }
+.chat-product-name { margin: 0; font-size: 10px; font-weight: 700; }
+.chat-messages { min-height: 190px; max-height: min(48vh, 390px); overflow: auto; display: flex; flex-direction: column; gap: 9px; padding: 12px; border: 1px solid var(--line); background: #08090bd9; }
+.chat-message { width: fit-content; max-width: 88%; padding: 8px 11px; border: 1px solid var(--line); background: var(--panel-2); overflow-wrap: anywhere; }
+.chat-message--own { align-self: flex-end; border-color: #f3bd4d66; }
+.chat-message strong { font-size: 8px; color: var(--orange); }
+.chat-message p { margin: 3px 0; font-size: 10px; white-space: pre-wrap; }
+.chat-message time,.chat-inbox-item time { color: var(--muted); font-size: 8px; }
+.chat-empty,.chat-status { margin: 0; color: var(--muted); font-size: 9px; }
+.chat-compose { display: flex; align-items: stretch; gap: 9px; }
+.chat-compose textarea { flex: 1; min-width: 0; min-height: 54px; resize: vertical; padding: 9px; border: 1px solid var(--line); background: var(--panel); color: var(--white); font-size: 10px; }
+.chat-compose .button { min-height: 54px; }
+.chat-inbox { display: grid; gap: 7px; max-height: 58vh; overflow: auto; }
+.chat-inbox-item { display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 3px 12px; padding: 12px; border: 1px solid var(--line); background: var(--panel); color: var(--white); text-align: left; cursor: pointer; }
+.chat-inbox-item:hover { border-color: var(--orange); }
+.chat-inbox-item strong { grid-column: 1/-1; font-size: 10px; }
+.chat-inbox-item span { min-width: 0; overflow: hidden; color: var(--muted); font-size: 8px; text-overflow: ellipsis; white-space: nowrap; }
+.quick-view { grid-template-columns: minmax(0,.8fr) minmax(0,1fr); }
+.quick-view>img,.quick-view>video,.quick-view>div { min-width: 0; max-width: 100%; }
+@media(max-width:720px) {
+  .quick-actions .product-share-button--detail { align-self: flex-end; }
+  .quick-view { grid-template-columns: minmax(0,1fr) minmax(0,1fr); }
+  .chat-compose { flex-direction: column; }
+  .chat-compose .button { align-self: stretch; }
+}
+@media(max-width:390px) {
+  .quick-view { grid-template-columns: minmax(0,1fr); }
 }

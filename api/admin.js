@@ -729,6 +729,14 @@ module.exports = async function adminApi(req, res) {
 
   try {
     if (req.method === 'GET') {
+      const firebaseConfigured = Boolean(
+        process.env.FIREBASE_PROJECT_ID?.trim()
+        && process.env.FIREBASE_CLIENT_EMAIL?.trim()
+        && process.env.FIREBASE_PRIVATE_KEY?.trim()
+      );
+      if (!testMode && (!firebaseConfigured || !process.env.ADMIN_PIN || !process.env.ADMIN_SESSION_SECRET)) {
+        return res.status(200).json({ authenticated: false, localFallback: true, mode: 'local' });
+      }
       const { sessionSecret } = getPinConfig();
       const expiresAt = readSession(req, sessionSecret);
       if (!expiresAt) return res.status(401).json({ authenticated: false, error: 'session_required' });
