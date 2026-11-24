@@ -172,8 +172,10 @@
   }
 
   function safeExternalUrl(value) {
+    const text = String(value || '').trim();
+    if (!text) return '';
     try {
-      const url = new URL(String(value || ''));
+      const url = new URL(/^https?:\/\//i.test(text) ? text : `https://${text}`);
       return ['https:', 'http:'].includes(url.protocol) ? url.href : '';
     } catch {
       return '';

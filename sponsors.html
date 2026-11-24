@@ -20,6 +20,7 @@
   <script src="firebase-init.js"></script>
   <script src="shared-layout.js" defer></script>
   <script src="ui-icons.js" defer></script>
+  <script src="partner-banner.js" defer></script>
   <script src="sponsors.js" defer></script>
   <script src="page-transitions.js" defer></script>
 </head>
@@ -32,12 +33,14 @@
       <h1><span data-sponsors-copy="titlePrefix">ჩვენი</span> <span class="sponsors-title-highlight" data-sponsors-copy="titleSuffix">პარტნიორები.</span></h1>
       <p data-sponsors-copy="introDescription">პარტნიორები გვეხმარებიან ადგილობრივი ხელოვანებისა და მცირე ბიზნესის განვითარებაში.</p>
     </section>
-    <section class="featured-partner" id="featured-partner" aria-labelledby="featured-partner-title">
-      <p class="eyebrow" data-sponsors-copy="featuredEyebrow">მთავარი პარტნიორი</p>
-      <div class="featured-partner-content" id="featured-partner-content">
-        <img class="featured-partner-logo" src="assets/nino-school-logo.png" alt="უცხო ენების უმაღლესი სკოლა ნინო — ლოგო">
-        <div><h2 id="featured-partner-title">უცხო ენების უმაღლესი სკოლა "ნინო"</h2><p>მადლობა მხარდაჭერისა და პარტნიორობისთვის.</p></div>
+    <section class="partner-banner" aria-labelledby="partner-banner-title">
+      <div class="partner-banner-logo-frame"><img class="partner-banner-logo" src="assets/nino-school-logo.png" alt="უცხო ენების უმაღლესი სკოლა „ნინო“ — ლოგო"></div>
+      <div class="partner-banner-copy">
+        <span class="partner-banner-badge">მთავარი პარტნიორი</span>
+        <h2 id="partner-banner-title">უცხო ენების უმაღლესი სკოლა „ნინო“</h2>
+        <p id="partner-banner-description">მადლობა მხარდაჭერისა და პარტნიორობისთვის.</p>
       </div>
+      <button class="partner-banner-cta" type="button" data-partner-modal-open>გაიგე მეტი <span aria-hidden="true">→</span></button>
     </section>
     <section class="sponsor-directory" aria-labelledby="sponsor-directory-title">
       <div class="section-heading"><div><p class="eyebrow">DROPZONE / COMMUNITY</p><h2 id="sponsor-directory-title" data-sponsors-copy="directoryTitle">სპონსორები</h2></div></div>
@@ -45,5 +48,29 @@
     </section>
   </main>
   <div id="shared-footer"></div>
+  <div id="partner-modal-root">
+    <dialog class="partner-modal" id="partner-modal" aria-labelledby="partner-modal-title">
+      <button class="partner-modal-close-icon" type="button" aria-label="დახურვა" data-partner-modal-close>×</button>
+      <div class="partner-modal-heading">
+        <div class="partner-modal-logo-frame"><img id="partner-modal-logo" src="assets/nino-school-logo.png" alt="უცხო ენების უმაღლესი სკოლა „ნინო“ — ლოგო"></div>
+        <div><span class="partner-banner-badge">მთავარი პარტნიორი</span><h2 id="partner-modal-title">შპს „უცხო ენების უმაღლესი სკოლა ნინო“</h2></div>
+      </div>
+      <p class="partner-modal-intro">მოხარული ვართ, რომ Dropzone-ის მთავარი პარტნიორი და მხარდამჭერია სკოლა „ნინო“ — 1992 წელს დაარსებული პირველი კერძო სკოლა საქართველოში, რომელიც მრავალი წელია ქმნის ხარისხიან საგანმანათლებლო გარემოს და უჭერს მხარს ახალგაზრდების განვითარებას.</p>
+      <dl class="partner-modal-details">
+        <div><dt>სტატუსი / კატეგორია</dt><dd>Page · Middle School <span>(1992 წლიდან — პირველი კერძო სკოლა საქართველოში)</span></dd></div>
+        <div><dt>სოციალური აქტივობა</dt><dd>14K გამომწერი · 16 გამოწერილი</dd></div>
+        <div><dt>შეფასება</dt><dd>88% რეკომენდაცია <span>(33 შეფასება)</span></dd></div>
+        <div><dt>მისამართი</dt><dd>ვარკეთილი, ზემო პლატოს მე-2 მ/რ, კ. 11ა, საქართველოს ერთიანობისთვის მებრძოლთა ქუჩის მიმდებარედ, თბილისი, საქართველო</dd></div>
+        <div><dt>ტელეფონი</dt><dd><a href="tel:599906011">599 90 60 11</a></dd></div>
+        <div><dt>ელფოსტა</dt><dd><a href="mailto:highschoolnino@gmail.com">highschoolnino@gmail.com</a></dd></div>
+        <div><dt>დამატებითი ინფორმაცია</dt><dd>ფასის დიაპაზონი: $$ · ამჟამად დაკეტილია</dd></div>
+      </dl>
+      <div class="partner-modal-actions">
+        <a class="partner-modal-link" href="https://www.facebook.com/skolaNINO/" target="_blank" rel="noopener noreferrer">Facebook გვერდი <span aria-hidden="true">↗</span></a>
+        <a class="partner-modal-link" id="partner-website-link" target="_blank" rel="noopener noreferrer" hidden>გაიგე მეტი <span aria-hidden="true">↗</span></a>
+        <button class="partner-modal-dismiss" type="button" data-partner-modal-close>დახურვა</button>
+      </div>
+    </dialog>
+  </div>
 </body>
 </html>

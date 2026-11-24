@@ -275,6 +275,7 @@
   }
 
   function renderFeatured() {
+    if (!featuredRoot) return;
     const sponsor = featuredSponsor();
     const rawName = sponsor?.name || partner.partnerName || defaultPartnerName;
     const name = rawName === defaultPartnerName ? copy[language].defaultPartnerName : rawName;
