@@ -997,7 +997,85 @@ function productCard(product, index) {
     <div class="product-meta"><span>${escapeHTML(cityLabel(product.city))}</span></div>${productRatingMarkup(product)}<div class="seller-line"><span class="seller-dot ${product.sellerType === 'business' ? 'seller-verified' : ''}"></span><button type="button" class="seller-name" data-seller="${escapeHTML(product.sellerId || '')}" data-product-id="${escapeHTML(product.id)}">${escapeHTML(product.seller || product.brand || tr('ავტორი'))}</button><span class="seller-status">${escapeHTML(sellerLabel(product))}</span></div>
     <div class="product-card-actions"><button class="add-to-cart" type="button" data-add-cart="${escapeHTML(product.id)}">${escapeHTML(tr('კალათაში დამატება'))} <span>＋</span></button>${shareButtonMarkup(product.id, 'card')}</div><button class="boost-link" type="button" data-boost="${escapeHTML(product.id)}">${escapeHTML(tr('VIP დაწინაურება'))} <span>${arrowIcon}</span></button></div></article>`;
 }
+function renderAboutProductPreviews(products) {
+  const cards = [...document.querySelectorAll('[data-about-product-slot]')];
+  if (!cards.length) return;
+
+  const slots = [
+    { id: 'ceramic', keywords: ['კერამიკ', 'თიხა', 'pottery', 'ceramic', 'clay'], categories: ['კერამიკა', 'ხელნაკეთი & ხელოვნება'] },
+    { id: 'design', keywords: ['დიზაინ', 'ბრენდ', 'პოსტერი', 'პრინტი', 'design', 'brand', 'poster', 'print'], categories: ['დიზაინი', 'პოსტერები & პრინტები', 'ლოკალური ბრენდები'] },
+    { id: 'illustration', keywords: ['ილუსტრ', 'ნახატ', 'ჩანახატ', 'illustration', 'drawing', 'sketch'], categories: ['ილუსტრაცია', 'ციფრული სერვისები', 'ხელნაკეთი & ხელოვნება'] }
+  ];
+  const dateValue = value => {
+    const date = value && typeof value.toDate === 'function' ? value.toDate() : new Date(value || 0);
+    return Number.isNaN(date.getTime()) ? 0 : date.getTime();
+  };
+  const available = products
+    .filter(product => product && product.approvalStatus === 'Approved' && product.itemStatus !== 'Sold' && (product.image || product.mediaUrl))
+    .slice()
+    .sort((left, right) => dateValue(right.createdAt) - dateValue(left.createdAt));
+  const searchText = product => [
+    product.name, product.brand, product.category, product.description,
+    ...(Array.isArray(product.tags) ? product.tags : [])
+  ].filter(Boolean).join(' ').toLocaleLowerCase('ka');
+  const keyOf = product => String(product.id ?? product.name);
+  const selected = new Map();
+  const used = new Set();
+
+  slots.forEach(slot => {
+    const product = available.find(item => !used.has(keyOf(item))
+      && slot.keywords.some(keyword => searchText(item).includes(keyword)));
+    if (product) {
+      selected.set(slot.id, product);
+      used.add(keyOf(product));
+    }
+  });
+  slots.forEach(slot => {
+    if (selected.has(slot.id)) return;
+    const categories = slot.categories.map(category => category.toLocaleLowerCase('ka'));
+    const product = available.find(item => !used.has(keyOf(item))
+      && categories.includes(String(item.category || '').toLocaleLowerCase('ka')));
+    if (product) {
+      selected.set(slot.id, product);
+      used.add(keyOf(product));
+    }
+  });
+
+  cards.forEach(card => {
+    const media = card.querySelector('[data-about-product-media]');
+    const title = card.querySelector('[data-about-product-name]');
+    const label = card.querySelector('.about-product-category')?.textContent || 'ნამუშევარი';
+    const product = selected.get(card.dataset.aboutProductSlot);
+    if (!media || !title) return;
+    media.replaceChildren();
+    title.textContent = '';
+    title.hidden = true;
+    card.setAttribute('aria-label', `${label} — ნამუშევარი`);
+    if (!product) return;
+
+    const name = String(product.name || product.brand || 'ადგილობრივი ნამუშევარი');
+    const source = String(product.mediaUrl || product.image);
+    const preview = document.createElement(product.mediaType === 'video' ? 'video' : 'img');
+    if (preview instanceof HTMLVideoElement) {
+      preview.src = source;
+      preview.controls = true;
+      preview.muted = true;
+      preview.playsInline = true;
+      preview.preload = 'metadata';
+    } else {
+      preview.src = source;
+      preview.alt = name;
+      preview.loading = 'lazy';
+      preview.decoding = 'async';
+    }
+    media.append(preview);
+    title.textContent = name;
+    title.hidden = false;
+    card.setAttribute('aria-label', `${label} — ${name}`);
+  });
+}
 function renderProducts() {
+  renderAboutProductPreviews(allProducts);
   const grid = document.getElementById('product-grid');
   if (!grid) return;
   const publicProducts = allProducts.filter(product => product.approvalStatus === 'Approved' && product.itemStatus !== 'Sold');
