@@ -2510,7 +2510,7 @@ document.addEventListener('submit', async event => {
     const body = encodeURIComponent(`სახელი: ${name}\nსკოლა / ორგანიზაცია: ${organization}\n\nშეტყობინება:\n${message}`);
     const status = document.getElementById('partnership-message');
     if (status) status.textContent = 'ელფოსტის პროგრამა უნდა გაიხსნას. გასაგზავნად დაადასტურე შეტყობინება იქ.';
-    window.location.href = `mailto:dachilomidze499@gmail.com?subject=${subject}&body=${body}`;
+    window.location.href = `mailto:dropzone499@gmail.com?subject=${subject}&body=${body}`;
     return;
   }
   if (event.target.id === 'contact-form') {
