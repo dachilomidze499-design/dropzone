@@ -308,6 +308,148 @@ addTranslation('განათავსე ნივთი', 'List a creation',
   ['წესები და პირობები', 'Terms and conditions', 'Правила и условия'],
   ['კონფიდენციალურობა', 'Privacy', 'Конфиденциальность']
 ].forEach(entry => addTranslation(...entry));
+[
+  ['ბრენდები', 'Brands', 'Бренды'],
+  ['სპონსორები', 'Sponsors', 'Спонсоры'],
+  ['განათავსე ნივთი', 'List an item', 'Разместить товар'],
+  ['შეტყობინებები', 'Notifications', 'Уведомления'],
+  ['ბიო', 'Bio', 'Био'],
+  ['ხელნაკეთი. უნიკალური. ლოკალური.', 'Handmade. Unique. Local.', 'Ручная работа. Уникально. Локально.'],
+  ['შენი იდეა.', 'Your idea.', 'Твоя идея.'],
+  ['შენი შემოქმედება.', 'Your creativity.', 'Твоё творчество.'],
+  ['აღმოაჩინე უნიკალური ხელნაკეთი ნივთები, ლოკალური ბრენდები და დიზაინერული ნამუშევრები ქართველი შემქმნელებისგან.', 'Discover unique handmade items, local brands and design pieces by Georgian creators.', 'Открой уникальные изделия ручной работы, местные бренды и дизайнерские работы грузинских авторов.'],
+  ['აღმოაჩინე ნამუშევრები', 'Discover creations', 'Открой работы'],
+  ['შენი ნამუშევრის დამატება', 'List your creation', 'Добавить свою работу'],
+  ['ნამუშევარი', 'creations', 'работ'],
+  ['რეალური ნამუშევრები ადგილობრივი ხელოვანებისა და მცირე ბიზნესისგან', 'Real creations from local artists and small businesses', 'Работы местных художников и малого бизнеса'],
+  ['შენი იდეა აქ იწყება', 'Your idea starts here', 'Твоя идея начинается здесь'],
+  ['ადგილობრივი შემოქმედება / თბილისი', 'Local creativity / Tbilisi', 'Местное творчество / Тбилиси'],
+  ['PREMIUM შემოქმედება', 'PREMIUM creations', 'ПРЕМИУМ-творчество'],
+  ['ტრენდული / რეკომენდებული', 'Trending / Recommended', 'В тренде / Рекомендуем'],
+  ['აღმოაჩინე ლოკალური ნიჭი', 'Discover local talent', 'Открой местные таланты'],
+  ['ახლად დამატებული ნამუშევრები', 'Newly added creations', 'Новые работы'],
+  ['გახდი გამყიდველი', 'Become a seller', 'Стань продавцом'],
+  ['მოძებნე ბრენდი, ავტორი ან ნივთი...', 'Search brands, creators or items...', 'Найти бренд, автора или товар...'],
+  ['ქალაქის ფილტრი', 'City filter', 'Фильтр города'],
+  ['ქალაქი', 'City', 'Город'],
+  ['ყველა ქალაქი', 'All cities', 'Все города'],
+  ['თბილისი', 'Tbilisi', 'Тбилиси'],
+  ['ბათუმი', 'Batumi', 'Батуми'],
+  ['ქუთაისი', 'Kutaisi', 'Кутаиси'],
+  ['ხელნაკეთი & ხელოვნება', 'Handmade & art', 'Ручная работа и искусство'],
+  ['ლოკალური ბრენდები', 'Local brands', 'Местные бренды'],
+  ['სთრითვარი', 'Streetwear', 'Уличная одежда'],
+  ['აქსესუარები & ტექნიკა', 'Accessories & tech', 'Аксессуары и техника'],
+  ['პოსტერები & პრინტები', 'Posters & prints', 'Постеры и принты'],
+  ['სახლი & დეკორი', 'Home & decor', 'Дом и декор'],
+  ['ციფრული სერვისები', 'Digital services', 'Цифровые услуги'],
+  ['სხვა…', 'Other…', 'Другое…'],
+  ['ნივთი', 'items', 'товаров'],
+  ['განცხადებები არ არის', 'No listings', 'Объявлений нет'],
+  ['ჯერ ნამუშევრები არ დამატებულა', 'No creations have been added yet', 'Работы пока не добавлены'],
+  ['იყავი პირველი ხელოვანი ან ბიზნესი, ვინც ნამუშევარს განათავსებს DropZone-ზე.', 'Be the first artist or business to list a creation on DropZone.', 'Стань первым автором или бизнесом, разместившим работу на DropZone.'],
+  ['პირველი ნამუშევრის დამატება', 'List the first creation', 'Добавить первую работу'],
+  ['რეალური ადგილობრივი ნამუშევრები', 'Authentic local creations', 'Настоящие местные работы'],
+  ['ხშირად დასმული კითხვები', 'Frequently asked questions', 'Часто задаваемые вопросы'],
+  ['სხვა კითხვა გაქვს? მოგვწერე', 'Have another question? Contact us', 'Остались вопросы? Напишите нам'],
+  ['როგორ განვათავსო ნამუშევარი?', 'How do I list a creation?', 'Как разместить работу?'],
+  ['დააჭირე „განათავსე ნივთი“-ს, შეავსე ნამუშევრის მონაცემები და ატვირთე ფოტო ან ვიდეო. კერძო შემქმნელისთვის პირველი 3 განცხადება უფასოა.', 'Select “List an item”, enter the creation details and upload a photo or video. The first 3 listings are free for individual creators.', 'Нажми «Разместить товар», укажи данные работы и загрузи фото или видео. Первые 3 объявления для частных авторов бесплатны.'],
+  ['ვინ ყიდის ნივთებს DropZone-ზე?', 'Who sells on DropZone?', 'Кто продаёт на DropZone?'],
+  ['პლატფორმა აერთიანებს ადგილობრივ ხელოვანებს, ხელოსნებს, მცირე ბიზნესებსა და დამოუკიდებელ ბრენდებს.', 'The platform brings together local artists, craftspeople, small businesses and independent brands.', 'Платформа объединяет местных художников, мастеров, малый бизнес и независимые бренды.'],
+  ['როგორ დავუკავშირდე ბრენდს ან გამყიდველს?', 'How do I contact a brand or seller?', 'Как связаться с брендом или продавцом?'],
+  ['თითოეული ნამუშევრის გვერდზე მოცემულია ავტორის ან მაღაზიის საკონტაქტო ინფორმაცია. შეთანხმება ხდება უშუალოდ მყიდველსა და გამყიდველს შორის.', 'Each creation page includes the creator’s or store’s contact details. Buyers and sellers make arrangements directly.', 'На странице каждой работы указаны контакты автора или магазина. Покупатель и продавец договариваются напрямую.'],
+  ['როგორ ვისაუბრო თანამშრომლობაზე?', 'How can I discuss a partnership?', 'Как обсудить сотрудничество?'],
+  ['მოგვწერე საკონტაქტო გვერდიდან და აირჩიე შესაბამისი ფორმა სკოლებისთვის, ორგანიზაციებისა და ბრენდებისთვის.', 'Contact us using the form for schools, organizations and brands on the contact page.', 'Напиши нам через форму для школ, организаций и брендов на странице контактов.'],
+  ['შენი შემოქმედება, შენი შესაძლებლობა', 'Your creativity, your opportunity', 'Твоё творчество — твои возможности'],
+  ['მიეცი შენს იდეებს', 'Give your ideas', 'Дай своим идеям'],
+  ['ფართო ასპარეზი.', 'Room to grow.', 'Широкий простор.'],
+  ['შექმენი, აკეთე ის, რაც გიყვარს და მიიტანე შენი პროდუქცია სწორ აუდიტორიამდე. გახადე შენი ბრენდი ცნობადი.', 'Create what you love and bring your products to the right audience. Make your brand known.', 'Создавай то, что любишь, и показывай товары нужной аудитории. Сделай свой бренд узнаваемым.'],
+  ['ნამუშევრის დამატება', 'List a creation', 'Добавить работу'],
+  ['ნიჭი არ იმალება.', 'Talent should not be hidden.', 'Талант не должен скрываться.'],
+  ['ის ზიარდება.', 'It is meant to be shared.', 'Им нужно делиться.'],
+  ['DropZone Market არის ციფრული სივრცე, სადაც ადგილობრივი შემოქმედება ახალ ეტაპზე გადადის. ვაერთიანებთ ქართველ ხელოვანებს, ხელოსნებსა და მცირე ბიზნესს ერთიან პლატფორმაზე.', 'DropZone Market is a digital space where local creativity reaches a new stage. We bring Georgian artists, craftspeople and small businesses together on one platform.', 'DropZone Market — цифровое пространство, где местное творчество выходит на новый уровень. Мы объединяем грузинских художников, мастеров и малый бизнес на одной платформе.'],
+  ['ადგილობრივი შემოქმედება', 'Local creativity', 'Местное творчество'],
+  ['ხელნაკეთი ნივთებიდან ციფრულ დიზაინამდე — ვეხმარებით ადგილობრივ ოსტატებსა და ავტორებს, იპოვონ თავიანთი დაფასება და მომხმარებელი.', 'From handmade goods to digital design, we help local makers and creators find appreciation and customers.', 'От изделий ручной работы до цифрового дизайна — помогаем местным мастерам и авторам найти признание и клиентов.'],
+  ['მცირე ბიზნესის მხარდაჭერა', 'Supporting small businesses', 'Поддержка малого бизнеса'],
+  ['ლოკალური ბრენდების სივრცე — დამწყებ მეწარმეებსა და ხელოვანებს ვაძლევთ ციფრულ ინსტრუმენტებს საკუთარი ნამუშევრების წარმატებულად გასაყიდად.', 'A space for local brands, giving emerging entrepreneurs and artists digital tools to sell their work successfully.', 'Площадка местных брендов, дающая начинающим предпринимателям и художникам цифровые инструменты для успешных продаж.'],
+  ['გამჭვირვალე არჩევანი', 'Transparent choices', 'Прозрачный выбор'],
+  ['პირდაპირი კავშირი — თითოეულ განცხადებაში ნახავ დეტალურ ინფორმაციას, ავტორს, ქალაქსა და ბეჯებს. შეთანხმება ხდება პირდაპირ მყიდველსა და შემოქმედს შორის.', 'Direct connection: every listing shows details, its creator, city and badges. Buyers and creators make arrangements directly.', 'Прямая связь: в каждом объявлении есть подробности, автор, город и значки. Покупатель и автор договариваются напрямую.'],
+  ['ბიოგრაფია', 'Biography', 'Биография'],
+  ['სავალდებულო ველები შეავსე', 'Complete the required fields', 'Заполните обязательные поля'],
+  ['გამყიდველის ტიპი', 'Seller type', 'Тип продавца'],
+  ['კერძო პირი', 'Individual', 'Частное лицо'],
+  ['კომპანია / მაღაზია', 'Company / Store', 'Компания / магазин'],
+  ['ბრენდის / მაღაზიის სახელი', 'Brand / store name', 'Название бренда / магазина'],
+  ['ნამუშევრის დასახელება', 'Creation name', 'Название работы'],
+  ['მაგალითად, ლოკალური სტუდია', 'For example, a local studio', 'Например, местная студия'],
+  ['ფასი (₾)', 'Price (GEL)', 'Цена (₾)'],
+  ['კატეგორია', 'Category', 'Категория'],
+  ['ტეგები (არასავალდებულო)', 'Tags (optional)', 'Теги (необязательно)'],
+  ['მე ვარ ადგილობრივი შემქმნელი', 'I am a local creator', 'Я местный автор'],
+  ['მყიდველი ამ ანგარიშზე გადარიცხავს ნივთის ღირებულებას.', 'The buyer will transfer the item price to this account.', 'Покупатель переведёт стоимость товара на этот счёт.'],
+  ['ფოტო ან ვიდეო', 'Photo or video', 'Фото или видео'],
+  ['აირჩიე ფოტო ან ვიდეო (ვიდეოს ატვირთვისთვის საჭიროა Firebase-ის კონფიგურაცია).', 'Choose a photo or video (Firebase configuration is required to upload video).', 'Выберите фото или видео (для загрузки видео требуется настройка Firebase).'],
+  ['ფაილის გადახედვა', 'File preview', 'Предпросмотр файла'],
+  ['მასალა, ფერები, დამზადების პროცესი და სხვა მნიშვნელოვანი დეტალები...', 'Materials, colors, process and other important details...', 'Материалы, цвета, процесс изготовления и другие важные детали...'],
+  ['კერძო შემქმნელს აქვს 3 უფასო განცხადება.', 'Individual creators get 3 free listings.', 'Частным авторам доступны 3 бесплатных объявления.'],
+  ['აირჩიე შენი', 'Choose your', 'Выбери свой'],
+  ['რიტმი.', 'pace.', 'ритм.'],
+  ['3 უფასო ნივთი', '3 free items', '3 бесплатных товара'],
+  ['შემდეგ: 5 ₾ / 5 ნივთი', 'Then: 5 GEL / 5 items', 'Затем: 5 ₾ / 5 товаров'],
+  ['100 ₾ / 100 ნივთი', '100 GEL / 100 items', '100 ₾ / 100 товаров'],
+  ['დადასტურებული ბეჯი და სოციალური ბმულები', 'Verified badge and social links', 'Значок проверки и ссылки на соцсети'],
+  ['პაკეტების ნახვა', 'View plans', 'Посмотреть тарифы'],
+  ['მოგვწერე', 'Contact us', 'Напишите нам'],
+  ['მოგვწერე შეტყობინება', 'Send us a message', 'Напишите нам'],
+  ['კითხვები ან იდეები გაქვს? გამოგვიგზავნე უკუკავშირი.', 'Have questions or ideas? Send us your feedback.', 'Есть вопросы или идеи? Отправьте нам отзыв.'],
+  ['სახელი', 'Name', 'Имя'],
+  ['ელ-ფოსტა', 'Email', 'Электронная почта'],
+  ['შეტყობინების გაგზავნა', 'Send message', 'Отправить сообщение'],
+  ['კითხვები, იდეები და თანამშრომლობა', 'Questions, ideas and partnerships', 'Вопросы, идеи и сотрудничество'],
+  ['მოგვწერე შენი იდეა', 'Tell us your idea', 'Расскажи нам о своей идее'],
+  ['სკოლებისთვის, ორგანიზაციებისა და ბრენდებისთვის — გამოგვიგზავნე სარეკლამო ან პარტნიორობის შეთავაზება.', 'Schools, organizations and brands: send us an advertising or partnership proposal.', 'Школы, организации и бренды: отправьте предложение о рекламе или партнёрстве.'],
+  ['კარგი იდეები', 'Great ideas', 'Хорошие идеи'],
+  ['ერთად იწყება.', 'start together.', 'начинаются вместе.'],
+  ['საკონტაქტო ინფორმაცია', 'Contact information', 'Контактная информация'],
+  ['პირდაპირ მოგვწერე ელფოსტაზე ან გამოგვყევი Instagram-ზე.', 'Email us directly or follow us on Instagram.', 'Напишите нам по электронной почте или подпишитесь на Instagram.'],
+  ['სარეკლამო და პარტნიორობის ფორმა', 'Advertising and partnership form', 'Форма рекламы и партнёрства'],
+  ['შეავსე სკოლამ, ორგანიზაციამ ან ბრენდმა თანამშრომლობის დასაწყებად.', 'For schools, organizations or brands starting a partnership.', 'Для школ, организаций и брендов, желающих начать сотрудничество.'],
+  ['ელ-ფოსტა / ტელეფონი', 'Email / phone', 'Электронная почта / телефон'],
+  ['თემა / ორგანიზაცია', 'Topic / organization', 'Тема / организация'],
+  ['შენი სახელი', 'Your name', 'Ваше имя'],
+  ['ელ-ფოსტა ან ტელეფონის ნომერი', 'Email or phone number', 'Электронная почта или номер телефона'],
+  ['სკოლა, ორგანიზაცია ან ბრენდი', 'School, organization or brand', 'Школа, организация или бренд'],
+  ['მოგვიყევი შენი იდეის შესახებ...', 'Tell us about your idea...', 'Расскажите о своей идее...'],
+  ['რეკომენდაციები გამოჩნდება დამტკიცებული ნამუშევრების დამატების შემდეგ.', 'Recommendations will appear once approved creations are added.', 'Рекомендации появятся после добавления одобренных работ.'],
+  ['მენიუს დახურვა', 'Close menu', 'Закрыть меню'],
+  ['შექმენი.', 'Create.', 'Создавай.'],
+  ['კერამიკა', 'Ceramics', 'Керамика'],
+  ['დიზაინი', 'Design', 'Дизайн'],
+  ['ილუსტრაცია', 'Illustration', 'Иллюстрация'],
+  ['ადგილობრივი ნამუშევრების მაგალითები', 'Examples of local creations', 'Примеры местных работ'],
+  ['კერამიკის ნამუშევარი', 'Ceramic creation', 'Керамическая работа'],
+  ['დიზაინის ნამუშევარი', 'Design creation', 'Дизайнерская работа'],
+  ['ილუსტრაციის ნამუშევარი', 'Illustration', 'Иллюстрация'],
+  ['PREMIUM შემოქმედება', 'PREMIUM creations', 'Работы PREMIUM'],
+  ['წინა პრემიუმ ნამუშევარი', 'Previous premium creation', 'Предыдущая работа PREMIUM'],
+  ['შემდეგი პრემიუმ ნამუშევარი', 'Next premium creation', 'Следующая работа PREMIUM'],
+  ['DROPZONE / LOCAL CREATORS', 'DROPZONE / LOCAL CREATORS', 'DROPZONE / МЕСТНЫЕ АВТОРЫ'],
+  ['ARTISAN / LOCAL BRAND / CREATION', 'ARTISAN / LOCAL BRAND / CREATION', 'МАСТЕРСКАЯ / МЕСТНЫЙ БРЕНД / ТВОРЧЕСТВО'],
+  ['DROPZONE / FAQ', 'DROPZONE / FAQ', 'DROPZONE / ЧАСТЫЕ ВОПРОСЫ'],
+  ['DROPZONE / PARTNERSHIPS', 'DROPZONE / PARTNERSHIPS', 'DROPZONE / ПАРТНЁРСТВО'],
+  ['DROPZONE / FEEDBACK', 'DROPZONE / FEEDBACK', 'DROPZONE / ОБРАТНАЯ СВЯЗЬ'],
+  ['მოდი, ვითანამშრომლოთ', 'Let’s work together', 'Давайте сотрудничать'],
+  ['საკონტაქტო', 'Contact', 'Контактная'],
+  ['ინფორმაცია', 'Information', 'Информация'],
+  ['შეტყობინება', 'message', 'сообщение'],
+  ['დაბრუნება', 'Returns', 'Возврат'],
+  ['და დავები', 'and disputes', 'и споры'],
+  ['მომხმარებლის დახმარება', 'Customer support', 'Помощь пользователям'],
+  ['და დაურთე განცხადების ბმული და უფლების დამადასტურებელი ინფორმაცია.', 'and include the listing link and evidence of your rights.', 'и приложите ссылку на объявление и подтверждение ваших прав.'],
+  ['DropZone Market მომხმარებლის კონფიდენციალურობას იცავს. რეგისტრაციის, განცხადების დადებისა და შეკვეთის გაფორმების დროს მოწოდებული მონაცემები გამოიყენება ანგარიშის მართვის, პროდუქტის გამოქვეყნების, მიწოდების ორგანიზებისა და მომხმარებელთა მხარდაჭერისთვის.', 'DropZone Market protects user privacy. Information provided during registration, listing creation and checkout is used to manage accounts, publish products, organize delivery and provide customer support.', 'DropZone Market защищает конфиденциальность пользователей. Данные, предоставленные при регистрации, размещении объявления и оформлении заказа, используются для управления аккаунтом, публикации товаров, организации доставки и поддержки пользователей.'],
+  ['ანგარიშის, ფავორიტებისა და კალათის მონაცემები უზრუნველყოფს საიტის ძირითადი ფუნქციონირება. პროდუქტის ფოტოები და ვიდეოები უსაფრთხოდ ინახება მედია-სერვისში, ხოლო განცხადებების ინფორმაცია — მონაცემთა ბაზაში. ჩვენ არ ვიმახსოვრებთ ან არ ვავრცელებთ ბარათის ნომერს, ვადას ან უსაფრთხოების კოდს.', 'Account, favorites and cart data support the site’s core features. Product photos and videos are stored securely in a media service, while listing information is stored in a database. We do not store or share card numbers, expiration dates or security codes.', 'Данные аккаунта, избранного и корзины обеспечивают основные функции сайта. Фотографии и видео товаров безопасно хранятся в медиасервисе, а сведения об объявлениях — в базе данных. Мы не сохраняем и не передаём номера карт, сроки действия и коды безопасности.'],
+  ['მონაცემები დამუშავდება მხოლოდ DropZone Market-ის მუშაობისა და კანონით განსაზღვრული მოთხოვნების უზრუნველყოფისთვის. მომხმარებელს შეუძლია მოითხოვოს საკუთარი პირადი მონაცემების შესწორება, განახლება ან წაშლა კონტაქტის გვერდიდან გაგზავნილი მოთხოვნით.', 'Data is processed only to operate DropZone Market and meet legal requirements. Users may request correction, updates or deletion of their personal data by contacting us through the contact page.', 'Данные обрабатываются только для работы DropZone Market и выполнения требований закона. Пользователи могут запросить исправление, обновление или удаление своих персональных данных, отправив запрос через страницу контактов.']
+].forEach(entry => addTranslation(...entry));
 const localeLookup = {};
 Object.values(textBook).forEach(entry => Object.values(entry).forEach(value => { if (!localeLookup[value]) localeLookup[value] = entry; }));
 localeLookup['განათავსე ნივთი'] = textBook['განათავსე ნივთი'];
@@ -818,7 +960,7 @@ function renderCategoryControls() {
   const categories = [...new Set([...defaultCatalogCategories, ...managedCatalogCategories])];
   const root = document.getElementById('brands');
   if (root) {
-    root.innerHTML = `<button class="category-chip ${state.category === 'ყველა' ? 'selected' : ''}" aria-pressed="${state.category === 'ყველა'}" data-category="ყველა" type="button">ყველა <span id="all-count">${allProducts.length}</span></button>`
+    root.innerHTML = `<button class="category-chip ${state.category === 'ყველა' ? 'selected' : ''}" aria-pressed="${state.category === 'ყველა'}" data-category="ყველა" type="button">${escapeHTML(tr('ყველა'))} <span id="all-count">${allProducts.length}</span></button>`
       + categories.map(category => `<button class="category-chip ${state.category === category ? 'selected' : ''}" aria-pressed="${state.category === category}" data-category="${escapeHTML(category)}" type="button">${escapeHTML(tr(category))}</button>`).join('')
       + '<span class="category-indicator" aria-hidden="true"></span>';
     bindCategoryIndicator(root);
@@ -888,7 +1030,7 @@ function installAdminEntryPoints() {
 function applyLanguage() {
   if (!translations[state.language]) state.language = 'ka';
   document.documentElement.lang = state.language;
-  const pageTitle = location.pathname.includes('/about/') ? { ka: 'ჩვენ შესახებ — DropZone Market', en: 'About — DropZone Market', ru: 'О нас — DropZone Market' } : location.pathname.includes('/contact/') ? { ka: 'ნამუშევრის დამატება — DropZone Market', en: 'List a creation — DropZone Market', ru: 'Добавить работу — DropZone Market' } : { ka: 'DropZone Market | ქართველი ოსტატები და ლოკალური ბრენდები', en: 'DropZone Market | Georgian Makers and Local Brands', ru: 'DropZone Market | грузинские мастера и местные бренды' };
+  const pageTitle = location.pathname.includes('/about/') ? { ka: 'ჩვენ შესახებ — DropZone Market', en: 'About — DropZone Market', ru: 'О нас — DropZone Market' } : location.pathname.includes('/contact/') ? { ka: 'ნამუშევრის დამატება — DropZone Market', en: 'List a creation — DropZone Market', ru: 'Добавить работу — DropZone Market' } : location.pathname.endsWith('/contact.html') ? { ka: 'კონტაქტი — DropZone Market', en: 'Contact — DropZone Market', ru: 'Контакты — DropZone Market' } : { ka: 'DropZone Market | ქართველი ოსტატები და ლოკალური ბრენდები', en: 'DropZone Market | Georgian Makers and Local Brands', ru: 'DropZone Market | грузинские мастера и местные бренды' };
   document.title = pageTitle[state.language];
   document.querySelectorAll('[data-i18n]').forEach(element => {
     const value = textBook[element.dataset.i18n];
@@ -1050,7 +1192,8 @@ function renderAboutProductPreviews(products) {
     media.replaceChildren();
     title.textContent = '';
     title.hidden = true;
-    card.setAttribute('aria-label', `${label} — ნამუშევარი`);
+    const creationLabel = state.language === 'en' ? 'creation' : state.language === 'ru' ? 'работа' : 'ნამუშევარი';
+    card.setAttribute('aria-label', `${label} — ${creationLabel}`);
     if (!product) return;
 
     const name = String(product.name || product.brand || 'ადგილობრივი ნამუშევარი');
@@ -1151,7 +1294,7 @@ function renderTrending() {
     return String(b.createdAt || b.id).localeCompare(String(a.createdAt || a.id));
   });
   root.innerHTML = candidates.slice(0, 4).map(productCard).join('')
-    || '<p class="demo-note">რეკომენდაციები გამოჩნდება დამტკიცებული ნამუშევრების დამატების შემდეგ.</p>';
+    || `<p class="demo-note">${escapeHTML(tr('რეკომენდაციები გამოჩნდება დამტკიცებული ნამუშევრების დამატების შემდეგ.'))}</p>`;
   attachTilt();
 }
 function renderPremium() {
@@ -2036,7 +2179,7 @@ function authModal(mode = 'register') {
     return;
   }
   const login = mode === 'login';
-  openModal(login ? tr('შესვლა') : tr('რეგისტრაცია'), `<div class="account-tabs"><button type="button" data-auth-mode="login" aria-selected="${login}">${escapeHTML(tr('შესვლა'))}</button><button type="button" data-auth-mode="register" aria-selected="${!login}">${escapeHTML(tr('რეგისტრაცია'))}</button></div><form id="auth-form" class="modal-form" data-mode="${login ? 'login' : 'register'}"><label class="field-label">${escapeHTML(tr('ელ. ფოსტა'))}<input name="email" type="email" autocomplete="email" required></label><label class="field-label">${escapeHTML(tr('პაროლი'))}<input name="password" type="password" autocomplete="${login ? 'current-password' : 'new-password'}" minlength="6" required></label><div class="register-fields" ${login ? 'hidden' : ''}><label class="field-label">${escapeHTML(tr('სახელი ან მაღაზიის სახელი'))}<input name="name" required></label><label class="field-label">${escapeHTML(tr('ბიოგრაფია'))}<textarea name="bio" rows="3" maxlength="500"></textarea></label><fieldset class="payment-options"><legend>${escapeHTML(tr('ანგარიშის ტიპი'))}</legend><label><input type="radio" name="role" value="private" checked> ${escapeHTML(tr('კერძო პირი'))}</label><label><input type="radio" name="role" value="business"> ${escapeHTML(tr('კომპანია / მაღაზია'))}</label></fieldset><div class="business-fields" id="auth-business-fields" hidden><p class="field-hint">${escapeHTML(tr('100 ₾ / თვე · 100 ნივთი · დადასტურებული ბეჯი'))}</p>${['address','instagram','tiktok','facebook','whatsapp','website'].map(key => `<label class="field-label">${escapeHTML(tr(key === 'address' ? 'შოურუმის მისამართი' : `${key}-ის ბმული`))}<input name="${key}" type="${key === 'address' ? 'text' : 'url'}" ${key === 'address' ? '' : `placeholder="https://${key === 'website' ? 'example.ge' : `${key}.com/...`}"`}></label>`).join('')}</div><p class="demo-note">${escapeHTML(tr('კერძო პირს აქვს 3 უფასო განცხადება.'))}</p></div><p class="form-message" id="auth-message" role="status"></p><button class="button button-primary" type="submit">${escapeHTML(tr(login ? 'შესვლა' : 'ანგარიშის შექმნა'))} <span>↗</span></button></form>`);
+  openModal(login ? tr('შესვლა') : tr('რეგისტრაცია'), `<div class="account-tabs"><button type="button" data-auth-mode="login" aria-selected="${login}">${escapeHTML(tr('შესვლა'))}</button><button type="button" data-auth-mode="register" aria-selected="${!login}">${escapeHTML(tr('რეგისტრაცია'))}</button></div><form id="auth-form" class="modal-form" data-mode="${login ? 'login' : 'register'}"><label class="field-label">${escapeHTML(tr('ელ. ფოსტა'))}<input name="email" type="email" autocomplete="email" required></label><label class="field-label">${escapeHTML(tr('პაროლი'))}<input name="password" type="password" autocomplete="${login ? 'current-password' : 'new-password'}" minlength="6" required></label><div class="register-fields" ${login ? 'hidden' : ''}><label class="field-label">${escapeHTML(tr('სახელი ან მაღაზიის სახელი'))}<input name="name" required></label><label class="field-label">${escapeHTML(tr('ბიო'))}<textarea name="bio" rows="3" maxlength="500"></textarea></label><fieldset class="payment-options"><legend>${escapeHTML(tr('ანგარიშის ტიპი'))}</legend><label><input type="radio" name="role" value="private" checked> ${escapeHTML(tr('კერძო პირი'))}</label><label><input type="radio" name="role" value="business"> ${escapeHTML(tr('კომპანია / მაღაზია'))}</label></fieldset><div class="business-fields" id="auth-business-fields" hidden><p class="field-hint">${escapeHTML(tr('100 ₾ / თვე · 100 ნივთი · დადასტურებული ბეჯი'))}</p>${['address','instagram','tiktok','facebook','whatsapp','website'].map(key => `<label class="field-label">${escapeHTML(tr(key === 'address' ? 'შოურუმის მისამართი' : `${key}-ის ბმული`))}<input name="${key}" type="${key === 'address' ? 'text' : 'url'}" ${key === 'address' ? '' : `placeholder="https://${key === 'website' ? 'example.ge' : `${key}.com/...`}"`}></label>`).join('')}</div><p class="demo-note">${escapeHTML(tr('კერძო პირს აქვს 3 უფასო განცხადება.'))}</p></div><p class="form-message" id="auth-message" role="status"></p><button class="button button-primary" type="submit">${escapeHTML(tr(login ? 'შესვლა' : 'ანგარიშის შექმნა'))} <span>↗</span></button></form>`);
   if (mode === 'register-business') modalRoot.querySelector('[name="role"][value="business"]')?.click();
 }
 
@@ -2240,7 +2383,7 @@ function setMobileNavigationOpen(isOpen) {
   navigation.classList.toggle('nav-open', isOpen);
   navigation.setAttribute('aria-hidden', String(!isOpen));
   toggle.setAttribute('aria-expanded', String(isOpen));
-  toggle.setAttribute('aria-label', isOpen ? 'მენიუს დახურვა' : 'მენიუს გახსნა');
+  toggle.setAttribute('aria-label', isOpen ? tr('მენიუს დახურვა') : tr('მენიუს გახსნა'));
 }
 
 window.addEventListener('resize', () => {

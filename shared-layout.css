@@ -25,9 +25,24 @@
 .shared-header .balance-button { display: inline-flex; align-items: center; gap: 7px; padding: 9px 10px; border: 1px solid rgba(17,17,17,.2); background: rgba(255,255,255,.32); font-size: 9px; cursor: pointer; }
 .shared-header .balance-plus { color: #D9541E; }
 .shared-header .balance-dot { width: 6px; height: 6px; border-radius: 50%; background: #D9541E; }
-.shared-header .language-picker { display: flex; align-items: center; gap: 2px; }
-.shared-header .language-picker button { padding: 4px; border: 0; background: transparent; color: #625B52; font-size: 8px; cursor: pointer; }
-.shared-header .language-picker button.is-active { color: #D9541E; font-weight: 700; }
+.shared-header .language-picker { display: flex; flex: 0 0 auto; align-items: center; gap: 2px; padding: 3px; border: 1px solid rgba(17,17,17,.14); border-radius: 999px; background: rgba(255,255,255,.32); }
+.shared-header .language-picker button { min-width: 29px; min-height: 26px; padding: 4px; border: 0; border-radius: 999px; background: transparent; color: #625B52; font-size: 8px; font-weight: 600; cursor: pointer; }
+.shared-header .language-picker button:hover { background: rgba(17,17,17,.07); color: #111111; }
+.shared-header .language-picker button.is-active { background: #111111; color: #F3EEE3; font-weight: 700; }
+.shared-header .language-picker button:focus-visible { outline: 2px solid #D9541E; outline-offset: 2px; }
+.shared-header .language-picker button:disabled { opacity: .45; cursor: not-allowed; }
+.shared-header .balance-plus { display: inline-grid; width: 28px; height: 28px; flex: 0 0 28px; place-items: center; border: 1px solid rgba(17,17,17,.2); border-radius: 50%; background: rgba(255,255,255,.42); color: #111111; }
+.shared-header .account-icon,.shared-header .balance-plus svg { color: #111111; stroke: currentColor; }
+.shared-header .site-header:not(.admin-header) .header-actions .icon-action:not(:disabled):hover,
+.shared-header .account-button:not(:disabled):hover,
+.shared-header .balance-button:not(:disabled):hover,
+.shared-header .menu-toggle:not(:disabled):hover { border-color: #D9541E; background: rgba(217,84,30,.1); color: #111111; }
+.shared-header .icon-action:focus-visible,.shared-header .account-button:focus-visible,
+.shared-header .balance-button:focus-visible,.shared-header .menu-toggle:focus-visible { outline: 2px solid #D9541E; outline-offset: 2px; }
+.shared-header .icon-action:not(:disabled):active,.shared-header .account-button:not(:disabled):active,
+.shared-header .balance-button:not(:disabled):active,.shared-header .menu-toggle:not(:disabled):active { background: rgba(217,84,30,.18); }
+.shared-header .icon-action:disabled,.shared-header .account-button:disabled,
+.shared-header .balance-button:disabled,.shared-header .menu-toggle:disabled { opacity: .45; cursor: not-allowed; }
 .shared-header .admin-logout-button { padding: 8px 10px; border: 1px solid rgba(17,17,17,.2); background: #111111; color: #F3EEE3; cursor: pointer; font-size: 9px; }
 .shared-header .admin-logout-button[hidden] { display: none !important; }
 .shared-header .menu-toggle { display: none; width: 36px; height: 36px; padding: 7px; color: #111111; background: rgba(255,255,255,.32); border: 1px solid rgba(17,17,17,.2); border-radius: 50%; cursor: pointer; }
@@ -139,29 +154,89 @@ html.page-is-leaving body { opacity: 0; transform: translateY(-12px); }
   .shared-header .main-nav a.active:after { display: none; }
   .shared-header .header-actions { margin-left: auto; }
   .shared-header .menu-toggle { display: inline-flex; flex: 0 0 auto; align-items: center; justify-content: center; }
-  .shared-header .language-picker { display: none; }
+  .shared-header .main-nav .language-picker { display: flex; align-self: flex-start; margin-top: 12px; }
+  .shared-header .site-header:not(.admin-header) .main-nav .language-picker { display: flex; }
 }
-@media(max-width:520px) {
+@media(max-width:720px) {
+  .shared-header .site-header:not(.admin-header) .header-actions .icon-action,
+  .shared-header .site-header:not(.admin-header) .header-actions .account-button,
+  .shared-header .site-header:not(.admin-header) .header-actions .balance-button,
+  .shared-header .menu-toggle {
+    box-sizing: border-box !important;
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+    max-width: 36px !important;
+    flex: 0 0 36px !important;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 1px solid rgba(17,17,17,.2);
+    border-radius: 50%;
+    background: rgba(255,255,255,.32);
+    color: #111111;
+  }
+  .shared-header .site-header:not(.admin-header) .header-actions .account-button > svg.account-icon {
+    width: 22px !important;
+    height: 22px !important;
+    flex: 0 0 22px !important;
+  }
+  .shared-header .site-header:not(.admin-header) .header-actions .balance-button { gap: 0; }
+  .shared-header .site-header:not(.admin-header) .header-actions .balance-button .balance-plus {
+    display: inline-flex !important;
+    width: 20px;
+    height: 20px;
+    flex: 0 0 20px;
+    align-items: center;
+    justify-content: center;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+  }
+  .shared-header .site-header:not(.admin-header) .header-actions .balance-button .balance-plus svg {
+    display: block;
+    width: 20px !important;
+    height: 20px !important;
+    flex: 0 0 20px !important;
+  }
+  .shared-header .menu-toggle svg { width: 20px !important; height: 20px !important; flex: 0 0 20px !important; }
+}
+@media(max-width:521px) {
   .shared-header .ticker { height: 28px; }
   .shared-header .site-header { padding-inline: 11px; gap: 7px; }
   .shared-header .site-header .brand { gap: 5px; }
   .shared-header .site-header .brand-icon { width: 32px; height: 32px; flex-basis: 32px; }
   .shared-header .site-header .brand-name { font-size: 13px; }
   .shared-header .header-actions { gap: 5px; }
-  .shared-header .site-header:not(.admin-header) .header-actions .icon-action { width: 34px; height: 34px; min-width: 34px; flex-basis: 34px; }
+  .shared-header .site-header:not(.admin-header) .header-actions .icon-action,
+  .shared-header .site-header:not(.admin-header) .header-actions .account-button,
+  .shared-header .site-header:not(.admin-header) .header-actions .balance-button,
+  .shared-header .menu-toggle {
+    box-sizing: border-box !important;
+    width: 34px !important;
+    height: 34px !important;
+    min-width: 34px !important;
+    max-width: 34px !important;
+    flex: 0 0 34px !important;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    border: 1px solid rgba(17,17,17,.2);
+    border-radius: 50%;
+    background: rgba(255,255,255,.32);
+    color: #111111;
+  }
   .shared-header .icon-action span { display: none; }
-  .shared-header .account-button { width: 34px !important; height: 34px !important; min-width: 34px !important; max-width: 34px !important; justify-content: center; padding: 0; border-radius: 50%; background: rgba(255,255,255,.32); }
   .shared-header .account-label { display: none; }
-  .shared-header .balance-button { width: 34px !important; height: 34px !important; min-width: 34px !important; max-width: 34px !important; justify-content: center; padding: 0; border-radius: 50%; background: rgba(255,255,255,.32); }
+  .shared-header .balance-button { gap: 0; }
   .shared-header .balance-dot,.shared-header #balance-label { display: none; }
-  .shared-header .menu-toggle { width: 34px; height: 34px; padding: 5px; }
   .shared-header .admin-logout-button { position: absolute; top: 70px; right: 52px; z-index: 2; }
   .site-footer { margin-top: 27px; }
   .site-footer .footer-main { grid-template-columns: 1fr 1fr; gap: 24px 16px; padding-block: 27px; }
   .site-footer .footer-bottom { min-height: 48px; gap: 8px; font-size: 8px; }
   .site-footer .footer-bottom span:nth-child(2) { max-width: 45%; text-align: right; }
 }
-@media(max-width:390px) {
+@media(max-width:410px) {
   .shared-header .site-header { padding-inline: 8px; gap: 4px; }
   .shared-header .site-header .brand { gap: 4px; }
   .shared-header .site-header .brand-icon { width: 28px; height: 28px; flex-basis: 28px; }
@@ -169,10 +244,48 @@ html.page-is-leaving body { opacity: 0; transform: translateY(-12px); }
   .shared-header .header-actions { gap: 3px; }
   .shared-header .menu-toggle { padding: 4px; }
   .shared-header .site-header:not(.admin-header) .header-actions .icon-action,
-  .shared-header .account-button,
-  .shared-header .balance-button,
-  .shared-header .menu-toggle { width: 30px; height: 30px; min-width: 30px; flex-basis: 30px; }
+  .shared-header .site-header:not(.admin-header) .header-actions .account-button,
+  .shared-header .site-header:not(.admin-header) .header-actions .balance-button,
+  .shared-header .menu-toggle {
+    box-sizing: border-box !important;
+    width: 30px !important;
+    height: 30px !important;
+    min-width: 30px !important;
+    max-width: 30px !important;
+    flex: 0 0 30px !important;
+    padding: 0 !important;
+  }
   .shared-header .account-button,.shared-header .balance-button { width: 30px !important; height: 30px !important; min-width: 30px !important; max-width: 30px !important; }
+}
+@media(max-width:360px) {
+  .shared-header .site-header { padding-inline: 6px; gap: 3px; }
+  .shared-header .site-header .brand-name { font-size: 11px; }
+  .shared-header .header-actions { gap: 2px; }
+  .shared-header .site-header:not(.admin-header) .header-actions .icon-action,
+  .shared-header .site-header:not(.admin-header) .header-actions .account-button,
+  .shared-header .site-header:not(.admin-header) .header-actions .balance-button,
+  .shared-header .menu-toggle {
+    box-sizing: border-box !important;
+    width: 28px !important;
+    height: 28px !important;
+    min-width: 28px !important;
+    max-width: 28px !important;
+    flex: 0 0 28px !important;
+    padding: 0 !important;
+  }
+  .shared-header .account-button,.shared-header .balance-button { width: 28px !important; height: 28px !important; min-width: 28px !important; max-width: 28px !important; }
+}
+.admin-pin-page { min-height: 48vh; display: grid; align-content: start; }
+.admin-pin-page .admin-pin-card { width: min(100%, 680px); justify-self: center; margin-top: clamp(24px, 8vh, 80px); }
+.admin-pin-page .admin-pin-card h1 { margin: 6px 0; font-size: clamp(20px, 4vw, 30px); }
+.admin-pin-page .admin-pin-form { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: end; gap: 14px; max-width: 560px; }
+.admin-pin-page .admin-pin-form .field-label { min-width: 0; }
+.admin-pin-page .admin-pin-form input { box-sizing: border-box; width: 100%; min-width: 0; min-height: 44px; }
+.admin-pin-page .admin-pin-form .button { min-height: 44px; margin: 0; white-space: nowrap; }
+.admin-pin-page .form-message { min-height: 1.5em; }
+@media(max-width:650px) {
+  .admin-pin-page .admin-pin-form { grid-template-columns: minmax(0, 1fr); }
+  .admin-pin-page .admin-pin-form .button { width: 100%; }
 }
 @media(max-width:650px) {
   #admin-pin-card .admin-pin-form { grid-template-columns: minmax(0, 1fr); }

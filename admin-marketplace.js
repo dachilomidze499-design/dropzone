@@ -29,11 +29,15 @@
   }
 
   function dateText(value) {
-    return dateValue(value)?.toLocaleString('ka-GE') || '—';
+    const locale = document.documentElement.lang === 'en' ? 'en-US' : document.documentElement.lang === 'ru' ? 'ru-RU' : 'ka-GE';
+    return dateValue(value)?.toLocaleString(locale) || '—';
   }
 
   function amount(value) {
-    return `${Number(value || 0).toLocaleString('ka-GE', { maximumFractionDigits: 2 })} ₾`;
+    const language = document.documentElement.lang;
+    const locale = language === 'en' ? 'en-US' : language === 'ru' ? 'ru-RU' : 'ka-GE';
+    const currency = language === 'en' ? 'GEL' : '₾';
+    return `${Number(value || 0).toLocaleString(locale, { maximumFractionDigits: 2 })} ${currency}`;
   }
 
   function reportError(error) {
@@ -79,11 +83,15 @@
       <div class="admin-listing-info"><strong>${escape(item.type)} · ${escape(item.description)}</strong>
       <small>ID: ${escape(item.id)}</small>
       <small>${escape(item.buyer)} · ${escape(item.method)} · ${dateText(item.transactionDate || item.createdAt)}</small>
-      <small>GMV ${amount(item.gmv)} · Net ${amount(item.netRevenue)} · Artist ${amount(item.artistPayout)} · ${escape(item.payoutStatus || '')}</small>
+      <small><span>მთლიანი გაყიდვები</span> ${amount(item.gmv)} · <span>წმინდა შემოსავალი</span> ${amount(item.netRevenue)} · <span>ხელოვანის წილი</span> ${amount(item.artistPayout)} · <span>${escape({
+        held: 'შეკავებულია',
+        'pending-delivery': 'მიწოდებას ელოდება',
+        'not-applicable': 'არ ვრცელდება'
+      }[item.payoutStatus] || item.payoutStatus || '')}</span></small>
       <div class="admin-row-actions">${item.type === 'sale' && !item.deliveredAt
         ? `<button class="admin-verify" type="button" data-mark-delivered="${escape(item.id)}">ჩაბარებულად მონიშვნა</button>`
         : ''}${item.payoutStatus === 'held' && dateValue(item.releaseAt) && dateValue(item.releaseAt) <= new Date()
-          ? `<button class="admin-verify" type="button" data-release-payout="${escape(item.id)}">Hold-ის მოხსნა</button>`
+          ? `<button class="admin-verify" type="button" data-release-payout="${escape(item.id)}">შეკავების მოხსნა</button>`
           : ''}</div></div></article>`).join('')
       : '<p class="demo-note">არჩეულ პერიოდში ტრანზაქციები არ არის.</p>';
     renderPayouts(document.getElementById('admin-payouts'));
@@ -93,7 +101,7 @@
     if (!root) return;
     root.innerHTML = state.payouts.length ? state.payouts.map(item => `<article class="admin-listing-row">
       <div class="admin-listing-info"><strong>${escape(item.vendorId)} · ${amount(item.amount)}</strong>
-      <small>${escape(item.status)} · ${escape(item.bankReference || 'ბანკის ნომერი არ არის')} · ${dateText(item.createdAt)}</small>
+      <small><span>${escape(item.status === 'paid' ? 'გადახდილია' : item.status === 'pending' ? 'მოლოდინშია' : item.status)}</span> · ${escape(item.bankReference || 'ბანკის ნომერი არ არის')} · ${dateText(item.createdAt)}</small>
       ${item.status === 'pending' ? `<label class="field-label">საბანკო გადარიცხვის ნომერი<input data-payout-reference="${escape(item.id)}" maxlength="120" required></label><button class="admin-verify" type="button" data-payout-mark-paid="${escape(item.id)}">გადარიცხულად მონიშვნა</button>` : ''}</div></article>`).join('')
       : '<p class="demo-note">Payout ჩანაწერი ჯერ არ არის.</p>';
   }
@@ -232,7 +240,11 @@
       return date && (!from || date >= new Date(`${from}T00:00:00`))
         && (!to || date <= new Date(`${to}T23:59:59.999`));
     });
-    const header = ['Transaction ID', 'Date', 'Buyer', 'Vendor ID', 'Description', 'Payment method', 'GMV', 'Net Revenue', 'Artist Payout'];
+    const header = document.documentElement.lang === 'ru'
+      ? ['ID транзакции', 'Дата', 'Покупатель', 'ID продавца', 'Описание', 'Способ оплаты', 'Оборот', 'Чистая выручка', 'Выплата автору']
+      : document.documentElement.lang === 'en'
+        ? ['Transaction ID', 'Date', 'Buyer', 'Vendor ID', 'Description', 'Payment method', 'GMV', 'Net Revenue', 'Creator payout']
+        : ['ტრანზაქციის ID', 'თარიღი', 'მყიდველი', 'გამყიდველის ID', 'აღწერა', 'გადახდის მეთოდი', 'GMV', 'წმინდა შემოსავალი', 'ხელოვანის payout'];
     const csv = [header, ...rows.map(item => [
       item.id, dateValue(item.transactionDate || item.createdAt)?.toISOString(), item.buyer,
       item.vendorId, item.description, item.method, item.gmv, item.netRevenue, item.artistPayout

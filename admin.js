@@ -59,6 +59,7 @@ function lockAdminPinSession() {
   document.dispatchEvent(new Event('dropzone-admin-logout'));
   pinMessage.textContent = 'PIN სესია დასრულდა. გასაგრძელებლად შეიყვანე PIN ხელახლა.';
   stopAdminDataSubscriptions();
+  location.replace('admin-pin.html?expired=1');
 }
 
 document.addEventListener('visibilitychange', () => {
@@ -89,20 +90,27 @@ function products() {
 function productMarkup(product) {
   const id = escapeAdminHTML(product.id);
   const status = product.approvalStatus || 'Approved';
+  const statusLabel = {
+    Pending: 'მოლოდინში',
+    Approved: 'დამტკიცებულია',
+    Rejected: 'უარყოფილია',
+    Deleted: 'წაშლილია',
+    Hidden: 'დამალულია'
+  }[status] || status;
   const mediaUrl = product.mediaUrl || product.image || '';
   const media = product.mediaType === 'video'
     ? `<video src="${escapeAdminHTML(mediaUrl)}" controls muted playsinline></video>`
     : `<img src="${escapeAdminHTML(mediaUrl)}" alt="">`;
   const actions = `<div class="admin-row-actions">
-    ${status === 'Pending' ? `<button type="button" class="admin-verify" data-approve="${id}">დამტკიცება / Approve</button><button type="button" class="admin-delete" data-reject="${id}">უარყოფა / Reject</button>` : ''}
-    <button type="button" class="admin-verify" data-edit="${id}">რედაქტირება / Edit</button>
-    <button type="button" class="admin-delete" data-delete="${id}">წაშლა / Delete</button>
+    ${status === 'Pending' ? `<button type="button" class="admin-verify" data-approve="${id}">დამტკიცება</button><button type="button" class="admin-delete" data-reject="${id}">უარყოფა</button>` : ''}
+    <button type="button" class="admin-verify" data-edit="${id}">რედაქტირება</button>
+    <button type="button" class="admin-delete" data-delete="${id}">წაშლა</button>
   </div>`;
   return `<article class="admin-listing-row" data-product-id="${id}">
     ${media}
     <div class="admin-listing-info">
       <strong>${escapeAdminHTML(product.name)}</strong>
-      <small>${escapeAdminHTML(product.seller || product.brand || '')} · ${escapeAdminHTML(product.price)} ₾ · ${escapeAdminHTML(status)}</small>
+      <small>${escapeAdminHTML(product.seller || product.brand || '')} · ${escapeAdminHTML(product.price)} ₾ · <span>${escapeAdminHTML(statusLabel)}</span></small>
       <small>${escapeAdminHTML(product.description || '')}</small>
       ${actions}
     </div>
@@ -154,7 +162,8 @@ function renderPayments() {
 function userDateLabel(value) {
   if (!value) return '—';
   const date = typeof value?.toDate === 'function' ? value.toDate() : new Date(value);
-  return Number.isNaN(date.getTime()) ? '—' : date.toLocaleDateString('ka-GE');
+  const locale = document.documentElement.lang === 'en' ? 'en-US' : document.documentElement.lang === 'ru' ? 'ru-RU' : 'ka-GE';
+  return Number.isNaN(date.getTime()) ? '—' : date.toLocaleDateString(locale);
 }
 
 function userMarkup(user) {
@@ -443,7 +452,7 @@ logoutButton.addEventListener('click', async () => {
   document.dispatchEvent(new Event('dropzone-admin-logout'));
   try {
     await adminApi.logout();
-    pinMessage.textContent = 'სესიიდან გამოხვედი.';
+    location.replace('admin-pin.html');
   } catch (error) {
     console.error('Admin PIN sign-out failed.', error);
     pinMessage.textContent = error.message || 'სესიიდან გამოსვლა ვერ მოხერხდა.';
@@ -519,16 +528,14 @@ async function restoreAdminPinSession() {
     const result = await adminApi.getSession();
     window.DropZoneAdminMode = result.mode || 'production';
     if (!result.authenticated) {
-      pinMessage.textContent = 'შესასვლელად შეიყვანე PIN.';
-      pinCard.hidden = false;
+      location.replace('admin-pin.html');
       return;
     }
     pinCard.hidden = true;
     acceptAdminPinSession(result.expiresAt);
   } catch (error) {
     console.error('Unable to restore admin PIN session.', error);
-    connectionLabel.textContent = error.message || 'PIN სესიის შემოწმება ვერ მოხერხდა.';
-    pinCard.hidden = true;
+    location.replace('admin-pin.html');
   }
 }
 

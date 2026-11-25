@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="ka">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#F3EEE3">
+  <meta name="description" content="DropZone Market-ის ადმინისტრატორის უსაფრთხო შესვლა.">
+  <title>ადმინისტრატორის შესვლა | DropZone Market</title>
+  <link rel="icon" type="image/png" href="assets/dropzone-brand-round.png">
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="admin.css">
+  <link rel="stylesheet" href="shared-layout.css">
+  <script src="shared-layout.js" defer></script>
+  <script src="ui-icons.js" defer></script>
+  <script src="admin-api.js" defer></script>
+  <script src="admin-login.js" defer></script>
+</head>
+<body class="admin-page">
+  <div id="shared-header"></div>
+  <main class="admin-dashboard shell admin-pin-page">
+    <div class="page-kicker"><span>DROPZONE / MANAGEMENT</span><span>ADMIN / PIN</span></div>
+    <section class="admin-dashboard-card admin-pin-card">
+      <div class="admin-dashboard-card-heading">
+        <div><p class="eyebrow" data-login-copy="eyebrow">ADMIN / SECURE ACCESS</p><h1 data-login-copy="title">ადმინისტრატორის შესვლა</h1></div>
+      </div>
+      <p class="demo-note" data-login-copy="description">შეიყვანე ადმინისტრატორის PIN პანელში შესასვლელად.</p>
+      <form id="admin-login-form" class="admin-settings-form admin-pin-form">
+        <label class="field-label" for="admin-login-pin"><span data-login-copy="pinLabel">PIN კოდი</span>
+          <input id="admin-login-pin" name="pin" type="password" inputmode="numeric" autocomplete="current-password" maxlength="128" required>
+        </label>
+        <button class="button button-primary" type="submit" data-login-copy="submit">შესვლა</button>
+      </form>
+      <p id="admin-login-message" class="form-message" role="status" aria-live="polite" aria-atomic="true"></p>
+    </section>
+  </main>
+  <div id="shared-footer"></div>
+</body>
+</html>

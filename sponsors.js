@@ -25,6 +25,17 @@
       partner: 'პარტნიორი',
       website: 'ვებგვერდი',
       views: 'ნახვა',
+      pageKickerLabel: 'DROPZONE / პარტნიორები',
+      communityLabel: 'DROPZONE / საზოგადოება',
+      dialogTitle: 'შპს „უცხო ენების უმაღლესი სკოლა ნინო“',
+      dialogIntro: 'მოხარული ვართ, რომ Dropzone-ის მთავარი პარტნიორი და მხარდამჭერია სკოლა „ნინო“ — 1992 წელს დაარსებული პირველი კერძო სკოლა საქართველოში, რომელიც მრავალი წელია ქმნის ხარისხიან საგანმანათლებლო გარემოს და უჭერს მხარს ახალგაზრდების განვითარებას.',
+      detailLabels: ['სტატუსი / კატეგორია', 'სოციალური აქტივობა', 'შეფასება', 'მისამართი', 'ტელეფონი', 'ელფოსტა', 'დამატებითი ინფორმაცია'],
+      statusDetail: 'Page · Middle School (1992 წლიდან — პირველი კერძო სკოლა საქართველოში)',
+      socialDetail: '14K გამომწერი · 16 გამოწერილი',
+      ratingDetail: '88% რეკომენდაცია (33 შეფასება)',
+      additionalDetail: 'ფასის დიაპაზონი: $$ · ამჟამად დაკეტილია',
+      facebookPage: 'Facebook გვერდი',
+      logoAlt: 'უცხო ენების უმაღლესი სკოლა „ნინო“ — ლოგო',
       ticker: 'DropZone-ს მხარს უჭერს უცხო ენების უმაღლესი სკოლა „ნინო“.'
     },
     en: {
@@ -46,6 +57,17 @@
       partner: 'Partner',
       website: 'Website',
       views: 'views',
+      pageKickerLabel: 'DROPZONE / PARTNERS',
+      communityLabel: 'DROPZONE / COMMUNITY',
+      dialogTitle: 'Nino Higher School of Foreign Languages LLC',
+      dialogIntro: 'We are delighted that Nino School, founded in 1992 as Georgia’s first private school, is DropZone’s main partner and supporter. For many years, it has created a high-quality educational environment and supported young people’s development.',
+      detailLabels: ['Status / category', 'Social activity', 'Rating', 'Address', 'Phone', 'Email', 'Additional information'],
+      statusDetail: 'Page · Middle School (Georgia’s first private school, founded in 1992)',
+      socialDetail: '14K followers · 16 following',
+      ratingDetail: '88% recommend (33 reviews)',
+      additionalDetail: 'Price range: $$ · Currently closed',
+      facebookPage: 'Facebook page',
+      logoAlt: 'Nino Higher School of Foreign Languages — logo',
       ticker: 'DropZone is supported by Nino Higher School of Foreign Languages.'
     },
     ru: {
@@ -67,6 +89,17 @@
       partner: 'Партнёр',
       website: 'Веб-сайт',
       views: 'просмотров',
+      pageKickerLabel: 'DROPZONE / ПАРТНЁРЫ',
+      communityLabel: 'DROPZONE / СООБЩЕСТВО',
+      dialogTitle: 'ООО «Высшая школа иностранных языков Нино»',
+      dialogIntro: 'Мы рады, что школа «Нино», основанная в 1992 году как первая частная школа Грузии, является главным партнёром и сторонником DropZone. Уже много лет школа создаёт качественную образовательную среду и поддерживает развитие молодёжи.',
+      detailLabels: ['Статус / категория', 'Активность в соцсетях', 'Рейтинг', 'Адрес', 'Телефон', 'Электронная почта', 'Дополнительная информация'],
+      statusDetail: 'Страница · Средняя школа (первая частная школа Грузии, основана в 1992 году)',
+      socialDetail: '14 тыс. подписчиков · 16 подписок',
+      ratingDetail: 'Рекомендуют 88% (33 отзыва)',
+      additionalDetail: 'Ценовой диапазон: $$ · Сейчас закрыто',
+      facebookPage: 'Страница Facebook',
+      logoAlt: 'Высшая школа иностранных языков «Нино» — логотип',
       ticker: 'DropZone поддерживает Высшая школа иностранных языков «Нино».'
     }
   };
@@ -239,6 +272,44 @@
     const suffix = document.querySelector('[data-sponsors-copy="titleSuffix"]');
     if (prefix) prefix.textContent = text.titlePrefix;
     if (suffix) suffix.textContent = text.titleSuffix;
+    const pageKicker = document.querySelector('.page-kicker > span:first-child');
+    if (pageKicker) pageKicker.textContent = text.pageKickerLabel;
+    const communityLabel = document.querySelector('.sponsor-directory .eyebrow');
+    if (communityLabel) communityLabel.textContent = text.communityLabel;
+    document.querySelectorAll('.partner-banner-badge').forEach(partnerBadge => {
+      partnerBadge.textContent = text.featuredEyebrow;
+    });
+    const partnerTitle = document.getElementById('partner-banner-title');
+    if (partnerTitle) partnerTitle.textContent = text.defaultPartnerName;
+    const partnerDescription = document.getElementById('partner-banner-description');
+    if (partnerDescription) partnerDescription.textContent = text.thanks;
+    const partnerCta = document.querySelector('.partner-banner-cta');
+    if (partnerCta?.firstChild) partnerCta.firstChild.nodeValue = `${text.learnMore} `;
+    const modalTitle = document.getElementById('partner-modal-title');
+    if (modalTitle) modalTitle.textContent = text.dialogTitle;
+    const modalIntro = document.querySelector('.partner-modal-intro');
+    if (modalIntro) modalIntro.textContent = text.dialogIntro;
+    document.querySelectorAll('.partner-modal-details dt').forEach((label, index) => {
+      label.textContent = text.detailLabels[index] || label.textContent;
+    });
+    const details = document.querySelectorAll('.partner-modal-details dd');
+    if (details[0]) details[0].textContent = text.statusDetail;
+    if (details[1]) details[1].textContent = text.socialDetail;
+    if (details[2]) details[2].textContent = text.ratingDetail;
+    if (details[3] && language !== 'ka') details[3].textContent = 'Varketili, Upper Plateau, Block 2, Building 11a, near Georgian Unity Fighters Street, Tbilisi, Georgia';
+    if (details[6]) details[6].textContent = text.additionalDetail;
+    const facebookLink = document.querySelector('.partner-modal-link[href*="facebook.com"]');
+    if (facebookLink?.firstChild) facebookLink.firstChild.nodeValue = `${text.facebookPage} `;
+    document.querySelectorAll('.partner-modal-close-icon, .partner-modal-dismiss').forEach(button => {
+      const closeLabel = language === 'ka' ? 'დახურვა' : language === 'en' ? 'Close' : 'Закрыть';
+      button.setAttribute('aria-label', closeLabel);
+      if (button.classList.contains('partner-modal-dismiss')) button.textContent = closeLabel;
+    });
+    const websiteLink = document.getElementById('partner-website-link');
+    if (websiteLink?.firstChild) websiteLink.firstChild.nodeValue = `${text.learnMore} `;
+    document.querySelectorAll('.partner-banner-logo,.partner-modal-logo-frame img').forEach(image => {
+      image.alt = text.logoAlt;
+    });
     document.querySelectorAll('[data-language]').forEach(button => {
       button.classList.toggle('is-active', button.dataset.language === language);
     });
