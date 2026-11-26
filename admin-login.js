@@ -60,7 +60,9 @@
       element.textContent = text.kicker[index] || element.textContent;
     });
     document.querySelectorAll('[data-language]').forEach(button => {
-      button.classList.toggle('is-active', button.dataset.language === language);
+      const selected = button.dataset.language === language;
+      button.classList.toggle('is-active', selected);
+      button.setAttribute('aria-pressed', String(selected));
     });
     if (new URLSearchParams(location.search).has('expired')) message.textContent = text.expired;
   }

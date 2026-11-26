@@ -25,15 +25,32 @@
     return `<a href="${href(path)}" data-nav="${key}"${active ? ' class="active" aria-current="page"' : ''}>${label}</a>`;
   }).join('');
   const brandMark = `<img class="brand-mark" src="${href('assets/dropzone-brand-round.png')}" alt="">`;
+  const languageButton = (language, label, flag) => `<button class="language-option" type="button" data-language="${language}" aria-label="${label}" aria-pressed="false" title="${label}">${flag}</button>`;
+  const bolnisiCross = 'M-1.5 -4.5H1.5V-2.5C1.5 -1.5 2 -1.5 2.5 -1.5H4.5V1.5H2.5C2 1.5 1.5 1.5 1.5 2.5V4.5H-1.5V2.5C-1.5 1.5 -2 1.5 -2.5 1.5H-4.5V-1.5H-2.5C-2 -1.5 -1.5 -1.5 -1.5 -2.5Z';
+  const georgianFlag = `<svg class="language-flag language-flag--georgia" viewBox="0 0 40 40" aria-hidden="true" focusable="false"><rect width="40" height="40" fill="#fff"/><path d="M16 0h8v16h16v8H24v16h-8V24H0v-8h16z" fill="#f00"/><path d="${bolnisiCross}" transform="translate(9 9) scale(.5)" fill="#f00"/><path d="${bolnisiCross}" transform="translate(31 9) scale(.5)" fill="#f00"/><path d="${bolnisiCross}" transform="translate(9 31) scale(.5)" fill="#f00"/><path d="${bolnisiCross}" transform="translate(31 31) scale(.5)" fill="#f00"/></svg>`;
+  const languageLabels = { ka: 'GEO — ქართული', en: 'ENG — English', ru: 'RUS — Русский' };
+  const languageFlags = {
+    ka: georgianFlag,
+    en: '<svg class="language-flag" viewBox="0 0 60 40" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false"><rect width="60" height="40" fill="#012169"/><path d="M0 0 60 40M60 0 0 40" stroke="#fff" stroke-width="9"/><path d="M0 0 60 40M60 0 0 40" stroke="#c8102e" stroke-width="4"/><path d="M30 0v40M0 20h60" stroke="#fff" stroke-width="13"/><path d="M30 0v40M0 20h60" stroke="#c8102e" stroke-width="7"/></svg>',
+    ru: '<svg class="language-flag" viewBox="0 0 60 40" preserveAspectRatio="xMidYMid slice" aria-hidden="true" focusable="false"><rect width="60" height="13.34" fill="#fff"/><rect y="13.33" width="60" height="13.34" fill="#0039a6"/><rect y="26.66" width="60" height="13.34" fill="#d52b1e"/></svg>'
+  };
+  const languageOptions = Object.keys(languageFlags)
+    .map(language => languageButton(language, languageLabels[language], languageFlags[language]))
+    .join('');
+  const languagePicker = variant => `<div class="language-switcher language-switcher--${variant}">
+    <button class="language-trigger is-active" type="button" data-language-trigger aria-controls="language-options-${variant}" aria-expanded="false" aria-label="ენის არჩევა">${languageFlags.ka}</button>
+    <div class="language-options" id="language-options-${variant}" role="group" aria-label="ენის არჩევა" aria-hidden="true">${languageOptions}</div>
+  </div>`;
   const header = `<div class="shared-header">
     <div class="ticker" aria-label="პარტნიორის სიახლე"><div class="ticker-track" id="ticker-track"><span>DropZone-ს მხარს უჭერს უცხო ენების უმაღლესი სკოლა „ნინო“.</span><span>DropZone-ს მხარს უჭერს უცხო ენების უმაღლესი სკოლა „ნინო“.</span></div></div>
     <header class="site-header">
       <a class="brand" href="${href('index.html')}" aria-label="DropZone მთავარი"><span class="brand-icon">${brandMark}</span><span class="brand-name">DropZone</span></a>
-      <nav class="main-nav" id="primary-navigation" aria-label="მთავარი ნავიგაცია">${navLinks}<div class="language-picker" role="group" aria-label="ენის არჩევა"><button type="button" data-language="ka">GEO</button><button type="button" data-language="en">ENG</button><button type="button" data-language="ru">RUS</button></div></nav>
+      <nav class="main-nav" id="primary-navigation" aria-label="მთავარი ნავიგაცია">${navLinks}${languagePicker('mobile')}</nav>
       <div class="header-actions">
         <button class="icon-action" type="button" aria-label="შეტყობინებები" data-notifications-open data-shared-action="notifications"><svg class="notification-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M18 9a6 6 0 0 0-12 0c0 7-2 7-2 9h16c0-2-2-2-2-9"/><path d="M10 21h4"/></svg><span class="notification-count" data-notification-count hidden>0</span></button>
         <button class="icon-action" id="favorites-toggle" type="button" aria-label="ფავორიტები" data-shared-action="favorites"><svg class="header-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.8 8.6c0 5-8.8 10.1-8.8 10.1S3.2 13.6 3.2 8.6a4.6 4.6 0 0 1 8.8-2.8 4.6 4.6 0 0 1 8.8 2.8Z"/></svg><span id="favorite-count">0</span></button>
         <button class="icon-action" id="cart-open" type="button" aria-label="კალათა" data-shared-action="cart"><svg class="cart-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 4.5h2l2.2 10.1a2 2 0 0 0 2 1.6h8.5a2 2 0 0 0 2-1.6L22 8H6"/><circle cx="10.5" cy="20" r="1.2"/><circle cx="18" cy="20" r="1.2"/></svg><span id="cart-count">0</span></button>
+        ${languagePicker('desktop')}
         <button class="account-button" id="auth-open" type="button" aria-label="შესვლა / რეგისტრაცია" data-shared-action="login"><span class="account-label" data-i18n="შესვლა / რეგისტრაცია">შესვლა / რეგისტრაცია</span><svg class="account-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5.5 19c.8-3.7 3-5.5 6.5-5.5s5.7 1.8 6.5 5.5"/></svg></button>
         <button class="balance-button" data-open-balance type="button" aria-label="ბალანსი" data-shared-action="balance"><span class="balance-dot"></span><span id="balance-label">ბალანსი: 0 ₾</span><span class="balance-plus" aria-hidden="true"><svg class="header-icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span></button>
         <button class="admin-logout-button" id="admin-logout" type="button" hidden>გამოსვლა</button>
@@ -490,6 +507,14 @@
       if (records.some(record => record.addedNodes.length)) translateStaticPage(currentLanguage);
     }).observe(root, { childList: true, subtree: true });
   }
+  function setLanguageSwitcherOpen(open, activeSwitcher) {
+    document.querySelectorAll('.language-switcher').forEach(switcher => {
+      const isOpen = open && switcher === activeSwitcher;
+      switcher.classList.toggle('is-open', isOpen);
+      switcher.querySelector('[data-language-trigger]')?.setAttribute('aria-expanded', String(isOpen));
+      switcher.querySelector('.language-options')?.setAttribute('aria-hidden', String(!isOpen));
+    });
+  }
   function applySharedLanguage(language) {
     const text = sharedLanguageCopy[language];
     if (!text) return;
@@ -499,10 +524,17 @@
       link.textContent = text.nav[index] || link.textContent;
     });
     document.querySelectorAll('[data-language]').forEach(button => {
-      button.classList.toggle('is-active', button.dataset.language === language);
+      const selected = button.dataset.language === language;
+      button.classList.toggle('is-active', selected);
+      button.setAttribute('aria-pressed', String(selected));
+    });
+    document.querySelectorAll('[data-language-trigger]').forEach(button => {
+      button.innerHTML = languageFlags[language];
+      button.setAttribute('aria-label', `${text.language}: ${languageLabels[language]}`);
+      button.title = languageLabels[language];
     });
     document.querySelector('.main-nav')?.setAttribute('aria-label', language === 'ka' ? 'მთავარი ნავიგაცია' : language === 'en' ? 'Main navigation' : 'Основная навигация');
-    document.querySelector('.language-picker')?.setAttribute('aria-label', text.language);
+    document.querySelectorAll('.language-options').forEach(options => options.setAttribute('aria-label', text.language));
     document.querySelector('.ticker')?.setAttribute('aria-label', text.tickerLabel);
     const tickerTrack = document.getElementById('ticker-track');
     if (tickerTrack) tickerTrack.replaceChildren(...[0, 1].map(() => {
@@ -558,6 +590,13 @@
   applySharedLanguage(savedLanguage);
   watchStaticPage();
   document.addEventListener('click', event => {
+    const languageTrigger = event.target.closest('[data-language-trigger]');
+    if (languageTrigger) {
+      const switcher = languageTrigger.closest('.language-switcher');
+      setLanguageSwitcherOpen(!switcher?.classList.contains('is-open'), switcher);
+      return;
+    }
+
     const languageButton = event.target.closest('[data-language]');
     if (languageButton) {
       const language = languageButton.dataset.language;
@@ -568,10 +607,12 @@
           console.error('Unable to save the language preference.', error);
         }
         applySharedLanguage(language);
+        setLanguageSwitcherOpen(false);
       }
       return;
     }
 
+    setLanguageSwitcherOpen(false);
     const toggle = event.target.closest('#menu-toggle');
     if (toggle && !hasApp) {
       const navigation = document.getElementById('primary-navigation');
@@ -588,5 +629,12 @@
       destination.searchParams.set('open', action.dataset.sharedAction);
       location.assign(destination.href);
     }
+  });
+  document.addEventListener('keydown', event => {
+    if (event.key !== 'Escape') return;
+    const openSwitcher = document.querySelector('.language-switcher.is-open');
+    if (!openSwitcher) return;
+    setLanguageSwitcherOpen(false);
+    openSwitcher.querySelector('[data-language-trigger]')?.focus();
   });
 })();

@@ -198,7 +198,7 @@
     };
     setLabel('.main-nav', language === 'ka' ? 'მთავარი ნავიგაცია' : language === 'en' ? 'Main navigation' : 'Основная навигация');
     setLabel('.ticker', language === 'ka' ? 'პარტნიორის სიახლე' : language === 'en' ? 'Partner update' : 'Новости партнёра');
-    setLabel('.language-picker', text.language);
+    setLabel('.language-options', text.language);
     document.querySelectorAll('.brand').forEach(brand => brand.setAttribute('aria-label', text.brand));
     setLabel('.shared-footer-stats', text.statsLabel);
     setLabel('[data-notifications-open]', text.notifications);
